@@ -1,0 +1,7 @@
+{
+  "name": "crystal-service",
+  "version": "0.1.0",
+  "description": "backend entry-point",
+  "private": true,
+  "scripts": {}
+}

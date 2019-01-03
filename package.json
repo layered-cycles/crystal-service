@@ -1,0 +1,14 @@
+{
+  "name": "crystal",
+  "version": "0.1.0",
+  "description": "",
+  "private": true,
+  "workspaces": {
+    "packages": [
+      "Development"
+    ]
+  },
+  "scripts": {
+    "start-development": "cd Development && yarn start"
+  }
+}
