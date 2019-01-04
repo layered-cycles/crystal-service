@@ -201,17 +201,11 @@ function stopActiveServiceExecutable({ serviceContainerId }) {
 function startNewServiceExecutable({ serviceContainerId }) {
   return new Promise(resolve => {
     console.log('starting new service executable...')
-    const startProcess = Child.spawn(
-      'docker',
-      ['exec', '-d', serviceContainerId, './CrystalService'],
-      {
-        stdio: 'inherit'
-      }
-    )
-    startProcess.on('close', () => {
-      console.log('')
-      resolve()
+    Child.spawn('docker', ['exec', serviceContainerId, './CrystalService'], {
+      stdio: 'inherit'
     })
+    console.log('')
+    resolve()
   })
 }
 
@@ -287,7 +281,7 @@ function copySourceFileToBuildServer({
 }) {
   return new Promise(resolve => {
     const relativeBuildServerTargetPath = updatedFilePath.substring(3)
-    console.log('transferring updated source file...')
+    console.log('copying updated source file...')
     const transferProcess = Child.spawn(
       'docker',
       [
