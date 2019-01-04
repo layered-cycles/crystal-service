@@ -1,44 +1,37 @@
 const Child = require('child_process')
 const { eventChannel, buffers } = require('redux-saga')
-const { call, spawn, select, put, take } = require('redux-saga/effects')
+const { call, spawn, take } = require('redux-saga/effects')
 const createSagaCore = require('create-saga-core')
 const createFileWatcher = require('node-watch')
-
-const ActionType = {
-  CRYSTAL_SERVICE_STARTED: 'CRYSTAL_SERVICE_STARTED__ACTION_TYPE'
-}
 
 const SourceChangeMessageType = {
   UPDATED: 'UPDATED__SOURCE_CHANGE_MESSAGE_TYPE',
   REMOVED: 'REMOVED__SOURCE_CHANGE_MESSAGE_TYPE'
 }
 
-createSagaCore({ reducer, initializer }).then(store => {})
-
-function reducer(state = { crystalServiceContainerId: null }, action) {
-  switch (action.type) {
-    case ActionType.CRYSTAL_SERVICE_STARTED:
-      const { crystalServiceContainerId } = action.payload
-      return { ...state, crystalServiceContainerId }
-    default:
-      return state
-  }
-}
+createSagaCore({ initializer }).then(store => {})
 
 function* initializer() {
-  const { buildServerContainerId } = yield call(buildServerInitializer)
-  yield call(crystalServiceUpdater, { buildServerContainerId })
-  yield spawn(serviceProcessor, { buildServerContainerId })
+  const { buildServerContainerId } = yield call(initBuildServerContainer)
+  const { serviceContainerId } = yield call(initServiceContainer)
+  yield call(updateServiceExecutable, {
+    buildServerContainerId,
+    serviceContainerId
+  })
+  yield spawn(serviceProcessor, {
+    buildServerContainerId,
+    serviceContainerId
+  })
 }
 
-function* buildServerInitializer() {
-  yield call(buildServerImageBuilder)
-  yield call(tempDirectoryMaker)
-  const { buildServerContainerId } = yield call(buildServerContainerStarter)
+function* initBuildServerContainer() {
+  yield call(buildBuildServerImage)
+  yield call(makeTempDirectory)
+  const { buildServerContainerId } = yield call(startBuildServerContainer)
   return { buildServerContainerId }
 }
 
-function buildServerImageBuilder() {
+function buildBuildServerImage() {
   return new Promise(resolve => {
     console.log('building crystal-development image...')
     Child.exec(
@@ -52,7 +45,7 @@ function buildServerImageBuilder() {
   })
 }
 
-function tempDirectoryMaker() {
+function makeTempDirectory() {
   return new Promise(resolve => {
     console.log('making Temp directory...')
     console.log('')
@@ -63,7 +56,7 @@ function tempDirectoryMaker() {
   })
 }
 
-function buildServerContainerStarter() {
+function startBuildServerContainer() {
   return new Promise(resolve => {
     console.log('starting crystal-development container...')
     Child.exec(
@@ -79,28 +72,60 @@ function buildServerContainerStarter() {
   })
 }
 
-function* crystalServiceUpdater({ buildServerContainerId }) {
-  yield call(crystalServiceExecutableBuilder, { buildServerContainerId })
-  yield call(crystalServiceExecutableTransferer, { buildServerContainerId })
-  yield call(crystalServiceImageBuilder)
-  yield call(crystalServiceContainerCleaner)
-  const { crystalServiceContainerId } = yield call(
-    crystalServiceContainerStarter
-  )
-  yield put({
-    type: ActionType.CRYSTAL_SERVICE_STARTED,
-    payload: { crystalServiceContainerId }
+function* initServiceContainer() {
+  yield call(buildServiceImage)
+  const { serviceContainerId } = yield call(startServiceContainer)
+  return { serviceContainerId }
+}
+
+function buildServiceImage() {
+  return new Promise(resolve => {
+    console.log('building crystal-service image...')
+    Child.exec(
+      'docker build -t crystal-service -f ../Service.Dockerfile ../',
+      (buildError, buildOutput) => {
+        if (buildError) throw buildError
+        console.log(buildOutput)
+        resolve()
+      }
+    )
   })
 }
 
-function crystalServiceExecutableBuilder({ buildServerContainerId }) {
+function startServiceContainer() {
   return new Promise(resolve => {
-    console.log('buidling CrystalService executable...')
+    console.log('starting crystal-service container...')
+    Child.exec(
+      'docker run -t -i -d -p 8181:8181 crystal-service',
+      (startError, containerId) => {
+        if (startError) throw startError
+        const serviceContainerId = containerId.substring(0, 12)
+        console.log(`---> ${serviceContainerId}`)
+        console.log('')
+        resolve({ serviceContainerId })
+      }
+    )
+  })
+}
+
+function* updateServiceExecutable({
+  buildServerContainerId,
+  serviceContainerId
+}) {
+  yield call(buildServiceExecutable, { buildServerContainerId })
+  yield call(copyServiceExecutableToHost, { buildServerContainerId })
+  yield call(copyServiceExecutableToServiceContainer, { serviceContainerId })
+  yield call(stopActiveServiceExecutable, { serviceContainerId })
+  yield call(startNewServiceExecutable, { serviceContainerId })
+}
+
+function buildServiceExecutable({ buildServerContainerId }) {
+  return new Promise(resolve => {
+    console.log('buidling service executable...')
     const buildProcess = Child.spawn(
       'docker',
       [
         'exec',
-        '-it',
         buildServerContainerId,
         'swift',
         'build',
@@ -118,10 +143,10 @@ function crystalServiceExecutableBuilder({ buildServerContainerId }) {
   })
 }
 
-function crystalServiceExecutableTransferer({ buildServerContainerId }) {
+function copyServiceExecutableToHost({ buildServerContainerId }) {
   return new Promise(resolve => {
-    console.log('transferring CrystalService executable...')
-    const transferProcess = Child.spawn(
+    console.log('copying service executable to host...')
+    const copyProcess = Child.spawn(
       'docker',
       [
         'cp',
@@ -132,94 +157,96 @@ function crystalServiceExecutableTransferer({ buildServerContainerId }) {
         stdio: 'inherit'
       }
     )
-    transferProcess.on('close', () => {
+    copyProcess.on('close', () => {
       console.log('')
       resolve()
     })
   })
 }
 
-function crystalServiceImageBuilder() {
+function copyServiceExecutableToServiceContainer({ serviceContainerId }) {
   return new Promise(resolve => {
-    console.log('building crystal-service image...')
-    Child.exec(
-      'docker build -t crystal-service -f ../Service.Dockerfile ../',
-      (buildError, buildOutput) => {
-        if (buildError) throw buildError
-        console.log(buildOutput)
-        resolve()
+    console.log('copying service executable to service container...')
+    const copyProcess = Child.spawn(
+      'docker',
+      ['cp', './Temp/CrystalService', `${serviceContainerId}:/Crystal/`],
+      {
+        stdio: 'inherit'
       }
     )
-  })
-}
-
-function* crystalServiceContainerCleaner() {
-  const { activeCrystalServiceContainerId } = yield select(state => ({
-    activeCrystalServiceContainerId: state.crystalServiceContainerId
-  }))
-  if (activeCrystalServiceContainerId) {
-    yield call(crystalServiceContainerKiller, {
-      activeCrystalServiceContainerId
+    copyProcess.on('close', () => {
+      console.log('')
+      resolve()
     })
-  }
-}
-
-function crystalServiceContainerKiller({ activeCrystalServiceContainerId }) {
-  return new Promise(resolve => {
-    console.log('stopping crystal-service container...')
-    Child.exec(
-      `docker container kill ${activeCrystalServiceContainerId}`,
-      (stopError, containerId) => {
-        if (stopError) throw stopError
-        console.log(`---> ${containerId}`)
-        resolve()
-      }
-    )
   })
 }
 
-function crystalServiceContainerStarter() {
+function stopActiveServiceExecutable({ serviceContainerId }) {
   return new Promise(resolve => {
-    console.log('starting crystal-service container...')
-    Child.exec(
-      'docker run -t -i -d -p 8181:8181 crystal-service',
-      (startError, containerId) => {
-        if (startError) throw startError
-        const crystalServiceContainerId = containerId.substring(0, 12)
-        console.log(`---> ${crystalServiceContainerId}`)
-        console.log('')
-        resolve({ crystalServiceContainerId })
+    console.log('stopping active service executable...')
+    const stopProcess = Child.spawn(
+      'docker',
+      ['exec', serviceContainerId, 'pkill', '-f', 'CrystalService'],
+      {
+        stdio: 'inherit'
       }
     )
+    stopProcess.on('close', () => {
+      console.log('')
+      resolve()
+    })
   })
 }
 
-function* serviceProcessor({ buildServerContainerId }) {
-  const { sourceChangeChannel } = yield call(sourceChangeWatcher)
+function startNewServiceExecutable({ serviceContainerId }) {
+  return new Promise(resolve => {
+    console.log('starting new service executable...')
+    const startProcess = Child.spawn(
+      'docker',
+      ['exec', '-d', serviceContainerId, './CrystalService'],
+      {
+        stdio: 'inherit'
+      }
+    )
+    startProcess.on('close', () => {
+      console.log('')
+      resolve()
+    })
+  })
+}
+
+function* serviceProcessor({ buildServerContainerId, serviceContainerId }) {
+  const { sourceChangeChannel } = yield call(initSourceChangeWatcher)
   while (true) {
     const changeMessage = yield take(sourceChangeChannel)
     switch (changeMessage.type) {
       case SourceChangeMessageType.UPDATED:
         const { updatedFilePath } = changeMessage.payload
-        yield call(sourceFileCopier, {
+        yield call(copySourceFileToBuildServer, {
           buildServerContainerId,
           updatedFilePath
         })
-        yield call(crystalServiceUpdater, { buildServerContainerId })
+        yield call(updateServiceExecutable, {
+          buildServerContainerId,
+          serviceContainerId
+        })
         continue
       case SourceChangeMessageType.REMOVED:
         const { removedFilePath } = changeMessage.payload
-        yield call(sourceFileRemover, {
+        yield call(removeSourceFileOnBuildServer, {
           buildServerContainerId,
           removedFilePath
         })
-        yield call(crystalServiceUpdater, { buildServerContainerId })
+        yield call(updateServiceExecutable, {
+          buildServerContainerId,
+          serviceContainerId
+        })
         continue
     }
   }
 }
 
-function sourceChangeWatcher() {
+function initSourceChangeWatcher() {
   return new Promise(resolve => {
     const sourceChangeChannel = eventChannel(emitMessage => {
       createFileWatcher(
@@ -254,7 +281,10 @@ function sourceChangeWatcher() {
   })
 }
 
-function sourceFileCopier({ buildServerContainerId, updatedFilePath }) {
+function copySourceFileToBuildServer({
+  buildServerContainerId,
+  updatedFilePath
+}) {
   return new Promise(resolve => {
     const relativeBuildServerTargetPath = updatedFilePath.substring(3)
     console.log('transferring updated source file...')
@@ -276,7 +306,10 @@ function sourceFileCopier({ buildServerContainerId, updatedFilePath }) {
   })
 }
 
-function sourceFileRemover({ buildServerContainerId, removedFilePath }) {
+function removeSourceFileOnBuildServer({
+  buildServerContainerId,
+  removedFilePath
+}) {
   return new Promise(resolve => {
     const relativeBuildServerTargetPath = removedFilePath.substring(3)
     console.log('removing source file...')
