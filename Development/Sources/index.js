@@ -201,10 +201,10 @@ function stopActiveServiceExecutable({ serviceContainerId }) {
 function startNewServiceExecutable({ serviceContainerId }) {
   return new Promise(resolve => {
     console.log('starting new service executable...')
+    console.log('')
     Child.spawn('docker', ['exec', serviceContainerId, './CrystalService'], {
       stdio: 'inherit'
     })
-    console.log('')
     resolve()
   })
 }
