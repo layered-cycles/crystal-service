@@ -1,29 +1,70 @@
 import Vapor
 
+protocol CrystalLayer: Decodable {
+  static var type: String { get }
+  func draw()
+}
+
+struct FooLayer: CrystalLayer {
+  static let type = "Foo"
+  var foo: String
+  func draw() {
+    print(foo)
+  }
+}
+
+struct BarLayer: CrystalLayer {
+  static let type = "Bar"
+  var bar: String
+  func draw() {
+    print(bar)
+  }
+}
+
+struct AnyCrystalLayer {
+  var base: CrystalLayer
+}
+
+extension AnyCrystalLayer: Decodable {
+  init(from decoder: Decoder) throws {
+    let keysContainer = try decoder.container(
+      keyedBy: CodingKeys.self)
+    let layerType = try keysContainer.decode(
+      String.self,
+      forKey: .type)
+    let LayerType = CrystalLayerManager
+      .availableLayerTypes[layerType]!
+    let layerDecoder = try keysContainer.superDecoder(
+      forKey: .inputs)
+    base = try LayerType.init(
+      from: layerDecoder)
+  }
+  private enum CodingKeys: String, CodingKey {
+    case type, inputs
+  }
+}
+
+class CrystalLayerManager {
+  static let availableLayerTypes: [String: CrystalLayer.Type] = [
+    FooLayer.type: FooLayer.self, 
+    BarLayer.type: BarLayer.self
+  ]
+}
+
 enum CrystalRequest: Content {
   case renderImage(RenderImagePayload)
 }
 
 extension CrystalRequest: Decodable {
-  private 
-  enum CodingKeys: String, CodingKey {
-    case type
-    case payload
-  }
-
-  enum CrystalRequestDecodingError: Error {
-    case unrecognizedRequestType
-  }
-
   init(from decoder: Decoder) throws {
-    let values = try decoder.container(
+    let keysContainer = try decoder.container(
       keyedBy: CodingKeys.self)
-    let requestType = try values.decode(
+    let requestType = try keysContainer.decode(
       String.self, 
       forKey: .type)
     switch requestType {
       case "RENDER_IMAGE":
-        let renderImagePayload = try values.decode(
+        let renderImagePayload = try keysContainer.decode(
           RenderImagePayload.self, 
           forKey: .payload) 
         self = .renderImage(renderImagePayload)
@@ -31,20 +72,27 @@ extension CrystalRequest: Decodable {
         throw CrystalRequestDecodingError.unrecognizedRequestType
     }
   }
+  private 
+  enum CodingKeys: String, CodingKey {
+    case type
+    case payload
+  }
+  enum CrystalRequestDecodingError: Error {
+    case unrecognizedRequestType
+  }
 }
 
 extension CrystalRequest: Encodable {
   enum CrystalRequestEncodingError: Error {
     case wtf
   }
-
   func encode(to encoder: Encoder) throws {
     throw CrystalRequestEncodingError.wtf
   }
 }
 
-struct RenderImagePayload: Content {
-  let test: String
+struct RenderImagePayload: Decodable {
+  let layers: [AnyCrystalLayer]
 }
 
 let serviceConfig = Config.default()
@@ -61,7 +109,10 @@ router.post(
     _, crystalRequest -> String in
     switch crystalRequest {
       case .renderImage(let renderImagePayload):
-        return renderImagePayload.test
+        return renderImagePayload
+          .layers
+          .reduce("") 
+          { "\($0)\($1.base)\n" }
     }
   }
 serviceServices.register(
