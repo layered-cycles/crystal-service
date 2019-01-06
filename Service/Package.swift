@@ -6,11 +6,14 @@ let package = Package(
     dependencies: [
         .package(
             url: "https://github.com/vapor/vapor.git", 
-            from: "3.0.0")
+            from: "3.0.0"),
+        .package(
+            url: "../SkiaLib", 
+            from: "0.0.0")
     ],
     targets: [
         .target(
             name: "CrystalService",
-            dependencies: ["Vapor"])
+            dependencies: ["Vapor", "SkiaLib"])
     ]
 )

@@ -1,4 +1,7 @@
 import Vapor
+import SkiaLib
+
+testSkiaLib()
 
 protocol CrystalLayer: Decodable {
   static var type: String { get }
