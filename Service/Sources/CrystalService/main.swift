@@ -54,11 +54,11 @@ class CrystalLayerManager {
   ]
 }
 
-enum CrystalRequest: Content {
+enum ApiRequest: Content {
   case renderImage(RenderImagePayload)
 }
 
-extension CrystalRequest: Decodable {
+extension ApiRequest: Decodable {
   init(from decoder: Decoder) throws {
     let keysContainer = try decoder.container(
       keyedBy: CodingKeys.self)
@@ -72,30 +72,64 @@ extension CrystalRequest: Decodable {
           forKey: .payload) 
         self = .renderImage(renderImagePayload)
       default:
-        throw CrystalRequestDecodingError.unrecognizedRequestType
+        throw ApiRequestDecodingError.unrecognizedRequestType
     }
   }
-  private 
-  enum CodingKeys: String, CodingKey {
-    case type
-    case payload
+  private enum CodingKeys: String, CodingKey {
+    case type, payload
   }
-  enum CrystalRequestDecodingError: Error {
+  enum ApiRequestDecodingError: Error {
     case unrecognizedRequestType
   }
 }
 
-extension CrystalRequest: Encodable {
-  enum CrystalRequestEncodingError: Error {
-    case wtf
-  }
+extension ApiRequest: Encodable {
   func encode(to encoder: Encoder) throws {
-    throw CrystalRequestEncodingError.wtf
+    throw ApiRequestEncodingError.wtf
+  }
+  enum ApiRequestEncodingError: Error {
+    case wtf
   }
 }
 
 struct RenderImagePayload: Decodable {
   let layers: [AnyCrystalLayer]
+}
+
+enum ApiResponse: Content {
+  case imageRendered(ImageRenderedPayload)
+}
+
+extension ApiResponse: Encodable {
+  func encode(to encoder: Encoder) throws {
+    var keysContainer = encoder.container(
+      keyedBy: CodingKeys.self)
+    switch self {
+      case .imageRendered(let imageRenderedPayload):
+        try keysContainer.encode(
+          "IMAGE_RENDERED",
+          forKey: .type)
+        try keysContainer.encode(
+          imageRenderedPayload, 
+          forKey: .payload)
+    }
+  }
+  private enum CodingKeys: String, CodingKey {
+    case type, payload
+  }
+}
+
+extension ApiResponse: Decodable {
+  init(from decoder: Decoder) throws {
+    throw ApiResponseDecodingError.wtf
+  }
+  enum ApiResponseDecodingError: Error {
+    case wtf
+  }
+}
+
+struct ImageRenderedPayload: Encodable {
+  let url: String
 }
 
 let serviceConfig = Config.default()
@@ -107,15 +141,15 @@ let serverConfig = NIOServerConfig.default(
 serviceServices.register(serverConfig)
 let router = EngineRouter.default()
 router.post(
-  CrystalRequest.self, 
+  ApiRequest.self, 
   at: "api") { 
-    _, crystalRequest -> String in
-    switch crystalRequest {
+    _, apiRequest -> ApiResponse in
+    switch apiRequest {
       case .renderImage(let renderImagePayload):
-        return renderImagePayload
-          .layers
-          .reduce("") 
-          { "\($0)\($1.base)\n" }
+        let imageRenderedPayload = ImageRenderedPayload(
+          url: "http://localhost:8181/image/test")
+        return .imageRendered(
+          imageRenderedPayload)
     }
   }
 router.get("image", String.parameter) { 
