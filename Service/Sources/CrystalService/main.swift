@@ -118,6 +118,22 @@ router.post(
           { "\($0)\($1.base)\n" }
     }
   }
+router.get("image", String.parameter) { 
+  imageRequest -> Response in
+  let imageName = try imageRequest
+    .parameters
+    .next(String.self)
+  let filePath = "./\(imageName).png"
+  let fileUrl = URL(
+    fileURLWithPath: filePath)  
+  let imageData = try Data(
+    contentsOf: fileUrl)
+  let imageResponse = imageRequest
+    .response(
+      imageData, 
+      as: MediaType.png)
+  return imageResponse
+}
 serviceServices.register(
   router, 
   as: Router.self)
