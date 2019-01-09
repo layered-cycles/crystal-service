@@ -13,14 +13,14 @@ createSagaCore({ initializer }).then(store => {})
 
 function* initializer() {
   const { buildServerContainerId } = yield call(initBuildServerContainer)
-  const { serviceContainerId } = yield call(initServiceContainer)
-  yield call(updateServiceExecutable, {
+  const { frameRendererContainerId } = yield call(initFrameRendererContainer)
+  yield call(updateFrameRendererExecutable, {
     buildServerContainerId,
-    serviceContainerId
+    frameRendererContainerId
   })
-  yield spawn(serviceProcessor, {
+  yield spawn(sourceCodeProcessor, {
     buildServerContainerId,
-    serviceContainerId
+    frameRendererContainerId
   })
 }
 
@@ -72,17 +72,17 @@ function startBuildServerContainer() {
   })
 }
 
-function* initServiceContainer() {
-  yield call(buildServiceImage)
-  const { serviceContainerId } = yield call(startServiceContainer)
-  return { serviceContainerId }
+function* initFrameRendererContainer() {
+  yield call(buildFrameRendererImage)
+  const { frameRendererContainerId } = yield call(startFrameRendererContainer)
+  return { frameRendererContainerId }
 }
 
-function buildServiceImage() {
+function buildFrameRendererImage() {
   return new Promise(resolve => {
-    console.log('building crystal-service image...')
+    console.log('building crystal-frame-renderer image...')
     Child.exec(
-      'docker build -t crystal-service -f ../Service.Dockerfile ../',
+      'docker build -t crystal-frame-renderer -f ../FrameRenderer.Dockerfile ../',
       (buildError, buildOutput) => {
         if (buildError) throw buildError
         console.log(buildOutput)
@@ -92,36 +92,38 @@ function buildServiceImage() {
   })
 }
 
-function startServiceContainer() {
+function startFrameRendererContainer() {
   return new Promise(resolve => {
-    console.log('starting crystal-service container...')
+    console.log('starting crystal-frame-renderer container...')
     Child.exec(
-      'docker run -t -i -d -p 8181:8181 crystal-service',
+      'docker run -t -i -d -p 8181:8181 crystal-frame-renderer',
       (startError, containerId) => {
         if (startError) throw startError
-        const serviceContainerId = containerId.substring(0, 12)
-        console.log(`---> ${serviceContainerId}`)
+        const frameRendererContainerId = containerId.substring(0, 12)
+        console.log(`---> ${frameRendererContainerId}`)
         console.log('')
-        resolve({ serviceContainerId })
+        resolve({ frameRendererContainerId })
       }
     )
   })
 }
 
-function* updateServiceExecutable({
+function* updateFrameRendererExecutable({
   buildServerContainerId,
-  serviceContainerId
+  frameRendererContainerId
 }) {
-  yield call(buildServiceExecutable, { buildServerContainerId })
-  yield call(copyServiceExecutableToHost, { buildServerContainerId })
-  yield call(copyServiceExecutableToServiceContainer, { serviceContainerId })
-  yield call(stopActiveServiceExecutable, { serviceContainerId })
-  yield call(startNewServiceExecutable, { serviceContainerId })
+  yield call(buildFrameRendererExecutable, { buildServerContainerId })
+  yield call(copyFrameRendererExecutableToHost, { buildServerContainerId })
+  yield call(copyFrameRendererExecutableToFrameRendererContainer, {
+    frameRendererContainerId
+  })
+  yield call(stopActiveFrameRendererExecutable, { frameRendererContainerId })
+  yield call(startNewFrameRendererExecutable, { frameRendererContainerId })
 }
 
-function buildServiceExecutable({ buildServerContainerId }) {
+function buildFrameRendererExecutable({ buildServerContainerId }) {
   return new Promise(resolve => {
-    console.log('buidling service executable...')
+    console.log('buidling frame renderer executable...')
     const buildProcess = Child.spawn(
       'docker',
       [
@@ -130,37 +132,37 @@ function buildServiceExecutable({ buildServerContainerId }) {
         'swift',
         'build',
         '--package-path',
-        './Service',
+        './FrameRenderer',
         '-Xcxx',
         '-std=c++11',
         '-Xcxx',
-        '-I/CrystalDevelopment/SkiaBuild/include/c',
+        '-I/crystal-development/SkiaBuild/include/c',
         '-Xcxx',
-        '-I/CrystalDevelopment/SkiaBuild/include/codec',
+        '-I/crystal-development/SkiaBuild/include/codec',
         '-Xcxx',
-        '-I/CrystalDevelopment/SkiaBuild/include/config',
+        '-I/crystal-development/SkiaBuild/include/config',
         '-Xcxx',
-        '-I/CrystalDevelopment/SkiaBuild/include/core',
+        '-I/crystal-development/SkiaBuild/include/core',
         '-Xcxx',
-        '-I/CrystalDevelopment/SkiaBuild/include/docs',
+        '-I/crystal-development/SkiaBuild/include/docs',
         '-Xcxx',
-        '-I/CrystalDevelopment/SkiaBuild/include/effects',
+        '-I/crystal-development/SkiaBuild/include/effects',
         '-Xcxx',
-        '-I/CrystalDevelopment/SkiaBuild/include/encode',
+        '-I/crystal-development/SkiaBuild/include/encode',
         '-Xcxx',
-        '-I/CrystalDevelopment/SkiaBuild/include/gpu',
+        '-I/crystal-development/SkiaBuild/include/gpu',
         '-Xcxx',
-        '-I/CrystalDevelopment/SkiaBuild/include/pathops',
+        '-I/crystal-development/SkiaBuild/include/pathops',
         '-Xcxx',
-        '-I/CrystalDevelopment/SkiaBuild/include/ports',
+        '-I/crystal-development/SkiaBuild/include/ports',
         '-Xcxx',
-        '-I/CrystalDevelopment/SkiaBuild/include/private',
+        '-I/crystal-development/SkiaBuild/include/private',
         '-Xcxx',
-        '-I/CrystalDevelopment/SkiaBuild/include/svg',
+        '-I/crystal-development/SkiaBuild/include/svg',
         '-Xcxx',
-        '-I/CrystalDevelopment/SkiaBuild/include/utils',
+        '-I/crystal-development/SkiaBuild/include/utils',
         '-Xlinker',
-        '/CrystalDevelopment/SkiaBuild/out/Static/libskia.a',
+        '/crystal-development/SkiaBuild/out/Static/libskia.a',
         '-Xlinker',
         '-lpthread',
         '-Xlinker',
@@ -177,14 +179,14 @@ function buildServiceExecutable({ buildServerContainerId }) {
   })
 }
 
-function copyServiceExecutableToHost({ buildServerContainerId }) {
+function copyFrameRendererExecutableToHost({ buildServerContainerId }) {
   return new Promise(resolve => {
-    console.log('copying service executable to host...')
+    console.log('copying frame renderer executable to host...')
     const copyProcess = Child.spawn(
       'docker',
       [
         'cp',
-        `${buildServerContainerId}:/CrystalDevelopment/Service/.build/x86_64-unknown-linux/debug/CrystalService`,
+        `${buildServerContainerId}:/crystal-development/FrameRenderer/.build/x86_64-unknown-linux/debug/FrameRenderer`,
         './Temp'
       ],
       {
@@ -198,12 +200,20 @@ function copyServiceExecutableToHost({ buildServerContainerId }) {
   })
 }
 
-function copyServiceExecutableToServiceContainer({ serviceContainerId }) {
+function copyFrameRendererExecutableToFrameRendererContainer({
+  frameRendererContainerId
+}) {
   return new Promise(resolve => {
-    console.log('copying service executable to service container...')
+    console.log(
+      'copying frame renderer executable to frame renderer container...'
+    )
     const copyProcess = Child.spawn(
       'docker',
-      ['cp', './Temp/CrystalService', `${serviceContainerId}:/Crystal/`],
+      [
+        'cp',
+        './Temp/FrameRenderer',
+        `${frameRendererContainerId}:/frame-renderer/`
+      ],
       {
         stdio: 'inherit'
       }
@@ -215,12 +225,12 @@ function copyServiceExecutableToServiceContainer({ serviceContainerId }) {
   })
 }
 
-function stopActiveServiceExecutable({ serviceContainerId }) {
+function stopActiveFrameRendererExecutable({ frameRendererContainerId }) {
   return new Promise(resolve => {
-    console.log('stopping active service executable...')
+    console.log('stopping active frame renderer executable...')
     const stopProcess = Child.spawn(
       'docker',
-      ['exec', serviceContainerId, 'pkill', '-f', 'CrystalService'],
+      ['exec', frameRendererContainerId, 'pkill', '-f', 'FrameRenderer'],
       {
         stdio: 'inherit'
       }
@@ -232,18 +242,25 @@ function stopActiveServiceExecutable({ serviceContainerId }) {
   })
 }
 
-function startNewServiceExecutable({ serviceContainerId }) {
+function startNewFrameRendererExecutable({ frameRendererContainerId }) {
   return new Promise(resolve => {
-    console.log('starting new service executable...')
+    console.log('starting new frame renderer executable...')
     console.log('')
-    Child.spawn('docker', ['exec', serviceContainerId, './CrystalService'], {
-      stdio: 'inherit'
-    })
+    Child.spawn(
+      'docker',
+      ['exec', frameRendererContainerId, './FrameRenderer'],
+      {
+        stdio: 'inherit'
+      }
+    )
     resolve()
   })
 }
 
-function* serviceProcessor({ buildServerContainerId, serviceContainerId }) {
+function* sourceCodeProcessor({
+  buildServerContainerId,
+  frameRendererContainerId
+}) {
   const { sourceChangeChannel } = yield call(initSourceChangeWatcher)
   while (true) {
     const changeMessage = yield take(sourceChangeChannel)
@@ -254,9 +271,9 @@ function* serviceProcessor({ buildServerContainerId, serviceContainerId }) {
           buildServerContainerId,
           updatedFilePath
         })
-        yield call(updateServiceExecutable, {
+        yield call(updateFrameRendererExecutable, {
           buildServerContainerId,
-          serviceContainerId
+          frameRendererContainerId
         })
         continue
       case SourceChangeMessageType.REMOVED:
@@ -265,9 +282,9 @@ function* serviceProcessor({ buildServerContainerId, serviceContainerId }) {
           buildServerContainerId,
           removedFilePath
         })
-        yield call(updateServiceExecutable, {
+        yield call(updateFrameRendererExecutable, {
           buildServerContainerId,
-          serviceContainerId
+          frameRendererContainerId
         })
         continue
     }
@@ -278,7 +295,7 @@ function initSourceChangeWatcher() {
   return new Promise(resolve => {
     const sourceChangeChannel = eventChannel(emitMessage => {
       createFileWatcher(
-        ['../Service/Sources', '../SkiaLib/Sources', '../Skia/Sources'],
+        ['../FrameRenderer/Sources', '../SkiaLib/Sources'],
         {
           recursive: true
         },
@@ -321,7 +338,7 @@ function copySourceFileToBuildServer({
       [
         'cp',
         updatedFilePath,
-        `${buildServerContainerId}:/CrystalDevelopment/${relativeBuildServerTargetPath}`
+        `${buildServerContainerId}:/crystal-development/${relativeBuildServerTargetPath}`
       ],
       {
         stdio: 'inherit'
@@ -348,7 +365,7 @@ function removeSourceFileOnBuildServer({
         buildServerContainerId,
         'rm',
         '-f',
-        `/CrystalDevelopment/${relativeBuildServerTargetPath}`
+        `/crystal-development/${relativeBuildServerTargetPath}`
       ],
       {
         stdio: 'inherit'

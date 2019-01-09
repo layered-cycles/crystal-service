@@ -1,9 +1,7 @@
-import SkiaLib
-import Foundation
-
-public 
-enum Frame {
-  public 
+ import Foundation
+ import SkiaLib
+ 
+ enum Frame {
   static func render(
     width: Int, 
     height: Int, 
@@ -61,30 +59,23 @@ final class FrameDataRef {
   var value = Data()
 }
 
-public 
 struct AnyFrameLayer {
-  public
   let base: FrameLayer
-  public 
   init(base: FrameLayer) {
     self.base = base
   }
 }
 
-public 
 protocol FrameLayer: Decodable {
   static var type: String { get }
   func draw(in canvas: Canvas)
 }
 
-public 
 struct Canvas {
-  private 
   let pointer: UnsafeMutableRawPointer
   init(_ canvasPointer: UnsafeMutableRawPointer) {
     pointer = canvasPointer
   }
-  public
   func drawCircle(centerX: Float, centerY: Float, radius: Float) {
     SkiaLib.drawCircle(centerX, centerY, radius, pointer)
   }

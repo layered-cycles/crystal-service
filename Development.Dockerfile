@@ -1,13 +1,12 @@
 FROM swift:4.2
-WORKDIR /CrystalDevelopment
+WORKDIR /crystal-development
 RUN apt-get update \ 
   && apt-get upgrade -y \
   && apt-get install -y \
   libpng-dev
-COPY ./Service ./Service
+COPY ./FrameRenderer ./FrameRenderer
 COPY ./SkiaBuild ./SkiaBuild
 COPY ./SkiaLib ./SkiaLib
-COPY ./Skia ./Skia
 RUN cd SkiaLib \
   && git config --global user.email "refectjam@gmail.com" \
   && git config --global user.name "Jared Mathews" \
@@ -15,11 +14,5 @@ RUN cd SkiaLib \
   && git add -A \
   && git commit -m "Initial commit" \
   && git tag -a 0.0.0 -m "0.0.0"
-RUN cd Skia \
-  && git init \
-  && git add -A \
-  && git commit -m "Initial commit" \
-  && git tag -a 0.0.0 -m "0.0.0"
-RUN cd Service \
+RUN cd FrameRenderer \
   && swift package edit SkiaLib --path ../SkiaLib \
-  && swift package edit Skia --path ../Skia
