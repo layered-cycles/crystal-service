@@ -1,56 +1,45 @@
 import Vapor
-import SkiaLib
+import Skia
 
-testSkiaLib()
-
-protocol CrystalLayer: Decodable {
-  static var type: String { get }
-  func draw()
-}
-
-struct FooLayer: CrystalLayer {
+struct FooLayer: FrameLayer {
   static let type = "Foo"
-  var foo: String
-  func draw() {
-    print(foo)
+  let centerX: Float
+  let centerY: Float
+  let radius: Float
+  func draw(in canvas: Canvas) {
+    canvas.drawCircle(
+      centerX: centerX, 
+      centerY: centerY, 
+      radius: radius)
   }
 }
 
-struct BarLayer: CrystalLayer {
-  static let type = "Bar"
-  var bar: String
-  func draw() {
-    print(bar)
-  }
-}
-
-struct AnyCrystalLayer {
-  var base: CrystalLayer
-}
-
-extension AnyCrystalLayer: Decodable {
+extension AnyFrameLayer: Decodable {
+  public 
   init(from decoder: Decoder) throws {
     let keysContainer = try decoder.container(
       keyedBy: CodingKeys.self)
     let layerType = try keysContainer.decode(
       String.self,
       forKey: .type)
-    let LayerType = CrystalLayerManager
+    let LayerType = FrameLayerManager
       .availableLayerTypes[layerType]!
     let layerDecoder = try keysContainer.superDecoder(
       forKey: .inputs)
-    base = try LayerType.init(
+    let baseLayer = try LayerType.init(
       from: layerDecoder)
+    self.init(
+      base: baseLayer)
   }
-  private enum CodingKeys: String, CodingKey {
+  private 
+  enum CodingKeys: String, CodingKey {
     case type, inputs
   }
 }
 
-class CrystalLayerManager {
-  static let availableLayerTypes: [String: CrystalLayer.Type] = [
-    FooLayer.type: FooLayer.self, 
-    BarLayer.type: BarLayer.self
+class FrameLayerManager {
+  static let availableLayerTypes: [String: FrameLayer.Type] = [
+    FooLayer.type: FooLayer.self
   ]
 }
 
@@ -75,7 +64,8 @@ extension ApiRequest: Decodable {
         throw ApiRequestDecodingError.unrecognizedRequestType
     }
   }
-  private enum CodingKeys: String, CodingKey {
+  private 
+  enum CodingKeys: String, CodingKey {
     case type, payload
   }
   enum ApiRequestDecodingError: Error {
@@ -93,43 +83,9 @@ extension ApiRequest: Encodable {
 }
 
 struct RenderImagePayload: Decodable {
-  let layers: [AnyCrystalLayer]
-}
-
-enum ApiResponse: Content {
-  case imageRendered(ImageRenderedPayload)
-}
-
-extension ApiResponse: Encodable {
-  func encode(to encoder: Encoder) throws {
-    var keysContainer = encoder.container(
-      keyedBy: CodingKeys.self)
-    switch self {
-      case .imageRendered(let imageRenderedPayload):
-        try keysContainer.encode(
-          "IMAGE_RENDERED",
-          forKey: .type)
-        try keysContainer.encode(
-          imageRenderedPayload, 
-          forKey: .payload)
-    }
-  }
-  private enum CodingKeys: String, CodingKey {
-    case type, payload
-  }
-}
-
-extension ApiResponse: Decodable {
-  init(from decoder: Decoder) throws {
-    throw ApiResponseDecodingError.wtf
-  }
-  enum ApiResponseDecodingError: Error {
-    case wtf
-  }
-}
-
-struct ImageRenderedPayload: Encodable {
-  let url: String
+  let width: Int 
+  let height: Int
+  let layers: [AnyFrameLayer]
 }
 
 let serviceConfig = Config.default()
@@ -143,31 +99,19 @@ let router = EngineRouter.default()
 router.post(
   ApiRequest.self, 
   at: "api") { 
-    _, apiRequest -> ApiResponse in
+    httpRequest, apiRequest -> Response in
     switch apiRequest {
-      case .renderImage(let renderImagePayload):
-        let imageRenderedPayload = ImageRenderedPayload(
-          url: "http://localhost:8181/image/test")
-        return .imageRendered(
-          imageRenderedPayload)
+    case .renderImage(let renderImagePayload):
+      let frameData = Frame.render(
+        width: renderImagePayload.width, 
+        height: renderImagePayload.height, 
+        layers: renderImagePayload.layers)
+      let imageResponse = httpRequest.response(
+        frameData, 
+        as: MediaType.png)
+      return imageResponse
     }
   }
-router.get("image", String.parameter) { 
-  imageRequest -> Response in
-  let imageName = try imageRequest
-    .parameters
-    .next(String.self)
-  let filePath = "./\(imageName).png"
-  let fileUrl = URL(
-    fileURLWithPath: filePath)  
-  let imageData = try Data(
-    contentsOf: fileUrl)
-  let imageResponse = imageRequest
-    .response(
-      imageData, 
-      as: MediaType.png)
-  return imageResponse
-}
 serviceServices.register(
   router, 
   as: Router.self)

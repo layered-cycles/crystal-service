@@ -7,6 +7,7 @@ RUN apt-get update \
 COPY ./Service ./Service
 COPY ./SkiaBuild ./SkiaBuild
 COPY ./SkiaLib ./SkiaLib
+COPY ./Skia ./Skia
 RUN cd SkiaLib \
   && git config --global user.email "refectjam@gmail.com" \
   && git config --global user.name "Jared Mathews" \
@@ -14,5 +15,11 @@ RUN cd SkiaLib \
   && git add -A \
   && git commit -m "Initial commit" \
   && git tag -a 0.0.0 -m "0.0.0"
+RUN cd Skia \
+  && git init \
+  && git add -A \
+  && git commit -m "Initial commit" \
+  && git tag -a 0.0.0 -m "0.0.0"
 RUN cd Service \
-  && swift package edit SkiaLib --path ../SkiaLib
+  && swift package edit SkiaLib --path ../SkiaLib \
+  && swift package edit Skia --path ../Skia

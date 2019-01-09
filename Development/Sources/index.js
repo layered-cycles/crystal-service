@@ -278,7 +278,7 @@ function initSourceChangeWatcher() {
   return new Promise(resolve => {
     const sourceChangeChannel = eventChannel(emitMessage => {
       createFileWatcher(
-        ['../Service/Sources', '../SkiaLib/Sources'],
+        ['../Service/Sources', '../SkiaLib/Sources', '../Skia/Sources'],
         {
           recursive: true
         },
