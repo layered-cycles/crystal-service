@@ -12,6 +12,7 @@ const SourceChangeMessageType = {
 createSagaCore({ initializer }).then(store => {})
 
 function* initializer() {
+  process.on('SIGINT', process.exit)
   const { buildServerContainerId } = yield call(initBuildServerContainer)
   const { frameRendererContainerId } = yield call(initFrameRendererContainer)
   yield call(updateFrameRendererExecutable, {
@@ -66,6 +67,9 @@ function startBuildServerContainer() {
         const buildServerContainerId = containerId.substring(0, 12)
         console.log(`---> ${buildServerContainerId}`)
         console.log('')
+        process.on('exit', () => {
+          Child.exec(`docker rm -f ${buildServerContainerId}`)
+        })
         resolve({ buildServerContainerId })
       }
     )
@@ -102,6 +106,9 @@ function startFrameRendererContainer() {
         const frameRendererContainerId = containerId.substring(0, 12)
         console.log(`---> ${frameRendererContainerId}`)
         console.log('')
+        process.on('exit', () => {
+          Child.exec(`docker rm -f ${frameRendererContainerId}`)
+        })
         resolve({ frameRendererContainerId })
       }
     )
