@@ -9,7 +9,7 @@
   { 
     var renderFrameCallbacks = RenderFrameCallbacks(
       onRender: { 
-        (canvasPointer, layersPointer) in        
+        (canvasPointer, layersPointer) in    
         let canvas = Canvas(canvasPointer) 
         let refreshedLayersRef = Unmanaged<FrameLayersRef>
           .fromOpaque(layersPointer)
@@ -76,7 +76,29 @@ struct Canvas {
   init(_ canvasPointer: UnsafeMutableRawPointer) {
     pointer = canvasPointer
   }
-  func drawCircle(centerX: Float, centerY: Float, radius: Float) {
-    SkiaLib.drawCircle(centerX, centerY, radius, pointer)
+  func drawPath(path: Path, color: SkiaLib.Color) {
+    SkiaLib.drawPath(
+      path.skiaPathKey,
+      color,
+      pointer)
+  }
+}
+
+final class Path {
+  let skiaPathKey: Int32
+  init() {
+    skiaPathKey = SkiaLib.initPath()
+  }
+  deinit {
+    SkiaLib.deinitPath(skiaPathKey)
+  }  
+}
+
+extension Path {
+  func addCircle(center: SkiaLib.Point, radius: Float) {
+    SkiaLib.addCircleToPath(
+      center, 
+      radius, 
+      skiaPathKey)
   }
 }

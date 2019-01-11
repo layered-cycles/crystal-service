@@ -1,4 +1,5 @@
 import Vapor 
+import SkiaLib
 
 func createEngineRouter() -> EngineRouter {
   let router = EngineRouter.default()
@@ -86,5 +87,51 @@ extension AnyFrameLayer: Decodable {
   private 
   enum CodingKeys: String, CodingKey {
     case type, inputs
+  }
+}
+
+extension SkiaLib.Point: Decodable {
+  public
+  init(from decoder: Decoder) throws {
+    let keysContainer = try decoder.container(
+      keyedBy: CodingKeys.self)
+    let xVal = try keysContainer.decode(
+      Float.self,
+      forKey: .x)
+    let yVal = try keysContainer.decode(
+      Float.self,
+      forKey: .y)
+    self.init(
+      x: xVal, 
+      y: yVal)
+  }
+  private 
+  enum CodingKeys: String, CodingKey {
+    case x, y
+  }
+}
+
+extension SkiaLib.Color: Decodable {
+  public
+  init(from decoder: Decoder) throws {
+    let keysContainer = try decoder.container(
+      keyedBy: CodingKeys.self)
+    let hue = try keysContainer.decode(
+      Float.self,
+      forKey: .hue)
+    let saturation = try keysContainer.decode(
+      Float.self,
+      forKey: .saturation)
+    let value = try keysContainer.decode(
+      Float.self,
+      forKey: .value)
+    self.init(
+      hue: hue, 
+      saturation: saturation,
+      value: value)
+  }
+  private 
+  enum CodingKeys: String, CodingKey {
+    case hue, saturation, value
   }
 }

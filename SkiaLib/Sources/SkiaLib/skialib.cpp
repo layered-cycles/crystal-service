@@ -1,9 +1,11 @@
 #include "include/skialib.h"
+#include <SkSurface.h>
 #include <SkCanvas.h>
 #include <SkPaint.h>
-#include <SkSurface.h>
 #include <SkImage.h>
 #include <SkData.h>
+#include <SkPath.h>
+#include <map>
 
 extern void renderFrame(
     int width,
@@ -31,19 +33,45 @@ extern void renderFrame(
   return;
 }
 
-extern void drawCircle(
-    float centerX,
-    float centerY,
-    float radius,
-    void *_Nonnull canvasPointer)
+std::map<int, SkPath> pathMap;
+int pathCount = 0;
+
+int initPath()
 {
+  int pathKey = pathCount;
+  SkPath newPath = SkPath();
+  pathMap[pathKey] = newPath;
+  pathCount += 1;
+  return pathKey;
+}
+
+void deinitPath(int pathKey)
+{
+  pathMap.erase(pathKey);
+}
+
+extern void drawPath(int pathKey, Color fillColor, void *_Nonnull canvasPointer)
+{
+  SkPath *path = &pathMap[pathKey];
+  SkPaint pathPaint;
+  pathPaint.setAntiAlias(true);
+  SkScalar hsv[3];
+  hsv[0] = fillColor.hue;
+  hsv[1] = fillColor.saturation;
+  hsv[2] = fillColor.value;
+  SkColor paintColor = SkHSVToColor(hsv);
+  pathPaint.setColor(paintColor);
   SkCanvas *canvas = (SkCanvas *)canvasPointer;
-  SkPaint circlePaint;
-  circlePaint.setAntiAlias(true);
-  circlePaint.setColor(SK_ColorRED);
-  canvas->drawCircle(
-      centerX,
-      centerY,
-      radius,
-      circlePaint);
+  canvas->drawPath(
+      *path,
+      pathPaint);
+}
+
+extern void addCircleToPath(Point center, float radius, int pathKey)
+{
+  SkPath *path = &pathMap[pathKey];
+  (*path).addCircle(
+      center.x,
+      center.y,
+      radius);
 }

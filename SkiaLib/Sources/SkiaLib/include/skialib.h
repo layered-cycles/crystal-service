@@ -19,7 +19,21 @@ extern "C"
       void *_Nonnull layersPointer,
       void *_Nonnull resultPointer,
       const RenderFrameCallbacks *_Nonnull callbacks);
-  void drawCircle(float, float, float, void *_Nonnull);
+  typedef struct
+  {
+    float x;
+    float y;
+  } Point;
+  typedef struct
+  {
+    float hue;
+    float saturation;
+    float value;
+  } Color;
+  int initPath();
+  void deinitPath(int);
+  void drawPath(int, Color, void *_Nonnull);
+  void addCircleToPath(Point, float, int);
 #ifdef __cplusplus
 }
 #endif
