@@ -1,10 +1,10 @@
-import SkiaLib
+import Skia
 
 struct FooLayer: FrameLayer {
   static let type = "Foo"
-  let center: SkiaLib.Point
+  let center: Skia.Point
   let radius: Float
-  let color: SkiaLib.Color
+  let color: Skia.Color
   func draw(in canvas: Canvas) {
     let circlePath = Path()
     circlePath.addCircle(
@@ -13,5 +13,6 @@ struct FooLayer: FrameLayer {
     canvas.drawPath(
       path: circlePath, 
       color: color)
+      
   }
 }

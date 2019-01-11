@@ -1,5 +1,5 @@
 import Vapor 
-import SkiaLib
+import Skia
 
 func createEngineRouter() -> EngineRouter {
   let router = EngineRouter.default()
@@ -90,7 +90,7 @@ extension AnyFrameLayer: Decodable {
   }
 }
 
-extension SkiaLib.Point: Decodable {
+extension Skia.Point: Decodable {
   public
   init(from decoder: Decoder) throws {
     let keysContainer = try decoder.container(
@@ -111,7 +111,7 @@ extension SkiaLib.Point: Decodable {
   }
 }
 
-extension SkiaLib.Color: Decodable {
+extension Skia.Color: Decodable {
   public
   init(from decoder: Decoder) throws {
     let keysContainer = try decoder.container(

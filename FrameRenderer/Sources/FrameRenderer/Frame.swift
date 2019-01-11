@@ -1,5 +1,5 @@
  import Foundation
- import SkiaLib
+ import Skia
  
  enum Frame {
   static func render(
@@ -76,29 +76,32 @@ struct Canvas {
   init(_ canvasPointer: UnsafeMutableRawPointer) {
     pointer = canvasPointer
   }
-  func drawPath(path: Path, color: SkiaLib.Color) {
-    SkiaLib.drawPath(
-      path.skiaPathKey,
+  func drawPath(path: Path, color: Skia.Color) {
+    Skia.drawPath(
+      path.skiaPointer,
       color,
       pointer)
   }
 }
 
 final class Path {
-  let skiaPathKey: Int32
+  let skiaPointer: UnsafeMutableRawPointer
+  let skiaKey: Int32
   init() {
-    skiaPathKey = SkiaLib.initPath()
+    let pathPair = Skia.initPath()
+    skiaPointer = pathPair.pointer
+    skiaKey = pathPair.key
   }
   deinit {
-    SkiaLib.deinitPath(skiaPathKey)
+    Skia.deinitPath(skiaKey)
   }  
 }
 
 extension Path {
-  func addCircle(center: SkiaLib.Point, radius: Float) {
-    SkiaLib.addCircleToPath(
+  func addCircle(center: Skia.Point, radius: Float) {
+    Skia.addCircleToPath(
       center, 
       radius, 
-      skiaPathKey)
+      skiaPointer)
   }
 }

@@ -6,8 +6,8 @@ RUN apt-get update \
   libpng-dev
 COPY ./FrameRenderer ./FrameRenderer
 COPY ./SkiaBuild ./SkiaBuild
-COPY ./SkiaLib ./SkiaLib
-RUN cd SkiaLib \
+COPY ./Skia ./Skia
+RUN cd Skia \
   && git config --global user.email "refectjam@gmail.com" \
   && git config --global user.name "Jared Mathews" \
   && git init \
@@ -15,4 +15,4 @@ RUN cd SkiaLib \
   && git commit -m "Initial commit" \
   && git tag -a 0.0.0 -m "0.0.0"
 RUN cd FrameRenderer \
-  && swift package edit SkiaLib --path ../SkiaLib \
+  && swift package edit Skia --path ../Skia

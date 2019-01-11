@@ -2,15 +2,15 @@
 import PackageDescription
 
 let package = Package(
-    name: "SkiaLib",
+    name: "Skia",
     products: [
         .library(
-            name: "SkiaLib",
-            targets: ["SkiaLib"]),
+            name: "Skia",
+            targets: ["Skia"]),
     ],
     targets: [
         .target(
-            name: "SkiaLib",
+            name: "Skia",
             dependencies: [])
     ]
 )

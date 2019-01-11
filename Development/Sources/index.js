@@ -302,7 +302,7 @@ function initSourceChangeWatcher() {
   return new Promise(resolve => {
     const sourceChangeChannel = eventChannel(emitMessage => {
       createFileWatcher(
-        ['../FrameRenderer/Sources', '../SkiaLib/Sources'],
+        ['../FrameRenderer/Sources', '../Skia/Sources'],
         {
           recursive: true
         },

@@ -8,12 +8,12 @@ let package = Package(
         url: "https://github.com/vapor/vapor.git", 
         from: "3.0.0"),
     .package(
-      url: "../SkiaLib", 
+      url: "../Skia", 
       from: "0.0.0")
   ],
   targets: [
     .target(
         name: "FrameRenderer",
-        dependencies: ["Vapor", "SkiaLib"])
+        dependencies: ["Vapor", "Skia"])
   ]
 )
