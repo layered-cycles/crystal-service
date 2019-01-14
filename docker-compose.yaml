@@ -1,0 +1,19 @@
+version: '3'
+
+services:
+  edge-server:
+    image: traefik
+    command: --api --docker
+    ports:
+      - '3000:80'
+      - '8080:8080'
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+  frame-renderer:
+    image: crystal-frame-renderer
+    stdin_open: true
+    labels:
+      - 'traefik.backend=frame-renderer'
+      - 'traefik.frontend.rule=Host:localhost'
+      - 'traefik.frontend.rule=PathPrefixStrip:/renderer'
+      - 'traefik.port=8181'

@@ -14,7 +14,7 @@ createSagaCore({ initializer }).then(store => {})
 function* initializer() {
   process.on('SIGINT', process.exit)
   const { buildServerContainerId } = yield call(initBuildServerContainer)
-  const { frameRendererContainerId } = yield call(initFrameRendererContainer)
+  const { frameRendererContainerId } = yield call(initServiceContainers)
   yield call(updateFrameRendererExecutable, {
     buildServerContainerId,
     frameRendererContainerId
@@ -35,14 +35,22 @@ function* initBuildServerContainer() {
 function buildBuildServerImage() {
   return new Promise(resolve => {
     console.log('building crystal-development image...')
-    Child.exec(
-      'docker build -t crystal-development -f ../Development.Dockerfile ../',
-      (buildError, buildOutput) => {
-        if (buildError) throw buildError
-        console.log(buildOutput)
-        resolve()
-      }
+    const buildProcess = Child.spawn(
+      'docker',
+      [
+        'build',
+        '-t',
+        'crystal-development',
+        '-f',
+        '../Development.Dockerfile',
+        '../'
+      ],
+      { stdio: 'inherit' }
     )
+    buildProcess.on('close', () => {
+      console.log('')
+      resolve()
+    })
   })
 }
 
@@ -50,7 +58,7 @@ function makeTempDirectory() {
   return new Promise(resolve => {
     console.log('making Temp directory...')
     console.log('')
-    Child.exec('mkdir -p Temp', (makeError, makeOutput) => {
+    Child.exec('mkdir -p Temp', makeError => {
       if (makeError) throw makeError
       resolve()
     })
@@ -76,39 +84,66 @@ function startBuildServerContainer() {
   })
 }
 
-function* initFrameRendererContainer() {
+function* initServiceContainers() {
   yield call(buildFrameRendererImage)
-  const { frameRendererContainerId } = yield call(startFrameRendererContainer)
+  yield call(composeServiceContainers)
+  const { frameRendererContainerId } = yield call(fetchFrameRendererContainerId)
   return { frameRendererContainerId }
 }
 
 function buildFrameRendererImage() {
   return new Promise(resolve => {
     console.log('building crystal-frame-renderer image...')
-    Child.exec(
-      'docker build -t crystal-frame-renderer -f ../FrameRenderer.Dockerfile ../',
-      (buildError, buildOutput) => {
-        if (buildError) throw buildError
-        console.log(buildOutput)
-        resolve()
-      }
+    const buildProcess = Child.spawn(
+      'docker',
+      [
+        'build',
+        '-t',
+        'crystal-frame-renderer',
+        '-f',
+        '../FrameRenderer.Dockerfile',
+        '../'
+      ],
+      { stdio: 'inherit' }
     )
+    buildProcess.on('close', () => {
+      console.log('')
+      resolve()
+    })
   })
 }
 
-function startFrameRendererContainer() {
+function composeServiceContainers() {
   return new Promise(resolve => {
-    console.log('starting crystal-frame-renderer container...')
+    console.log('composing service containers...')
+    const composeUpProcess = Child.spawn(
+      'docker-compose',
+      ['--file', '../docker-compose.yaml', 'up', '--detach'],
+      { stdio: 'inherit' }
+    )
+    composeUpProcess.on('close', () => {
+      console.log('')
+      process.on('exit', () => {
+        Child.spawn(
+          'docker-compose',
+          ['--file', '../docker-compose.yaml', 'down'],
+          { stdio: 'inherit' }
+        )
+      })
+      resolve()
+    })
+  })
+}
+
+function fetchFrameRendererContainerId() {
+  console.log('fetching frame-renderer container id...')
+  console.log('')
+  return new Promise(resolve => {
     Child.exec(
-      'docker run -t -i -d -p 8181:8181 crystal-frame-renderer',
-      (startError, containerId) => {
-        if (startError) throw startError
+      'docker-compose --file ../docker-compose.yaml ps --quiet frame-renderer',
+      (fetchError, containerId) => {
+        if (fetchError) throw fetchError
         const frameRendererContainerId = containerId.substring(0, 12)
-        console.log(`---> ${frameRendererContainerId}`)
-        console.log('')
-        process.on('exit', () => {
-          Child.exec(`docker rm -f ${frameRendererContainerId}`)
-        })
         resolve({ frameRendererContainerId })
       }
     )
@@ -175,9 +210,7 @@ function buildFrameRendererExecutable({ buildServerContainerId }) {
         '-Xlinker',
         '-lpng'
       ],
-      {
-        stdio: 'inherit'
-      }
+      { stdio: 'inherit' }
     )
     buildProcess.on('close', () => {
       console.log('')
@@ -196,9 +229,7 @@ function copyFrameRendererExecutableToHost({ buildServerContainerId }) {
         `${buildServerContainerId}:/crystal-development/FrameRenderer/.build/x86_64-unknown-linux/debug/FrameRenderer`,
         './Temp'
       ],
-      {
-        stdio: 'inherit'
-      }
+      { stdio: 'inherit' }
     )
     copyProcess.on('close', () => {
       console.log('')
@@ -221,9 +252,7 @@ function copyFrameRendererExecutableToFrameRendererContainer({
         './Temp/FrameRenderer',
         `${frameRendererContainerId}:/frame-renderer/`
       ],
-      {
-        stdio: 'inherit'
-      }
+      { stdio: 'inherit' }
     )
     copyProcess.on('close', () => {
       console.log('')
@@ -238,9 +267,7 @@ function stopActiveFrameRendererExecutable({ frameRendererContainerId }) {
     const stopProcess = Child.spawn(
       'docker',
       ['exec', frameRendererContainerId, 'pkill', '-f', 'FrameRenderer'],
-      {
-        stdio: 'inherit'
-      }
+      { stdio: 'inherit' }
     )
     stopProcess.on('close', () => {
       console.log('')
@@ -256,9 +283,7 @@ function startNewFrameRendererExecutable({ frameRendererContainerId }) {
     Child.spawn(
       'docker',
       ['exec', frameRendererContainerId, './FrameRenderer'],
-      {
-        stdio: 'inherit'
-      }
+      { stdio: 'inherit' }
     )
     resolve()
   })
@@ -347,9 +372,7 @@ function copySourceFileToBuildServer({
         updatedFilePath,
         `${buildServerContainerId}:/crystal-development/${relativeBuildServerTargetPath}`
       ],
-      {
-        stdio: 'inherit'
-      }
+      { stdio: 'inherit' }
     )
     transferProcess.on('close', () => {
       console.log('')
@@ -374,9 +397,7 @@ function removeSourceFileOnBuildServer({
         '-f',
         `/crystal-development/${relativeBuildServerTargetPath}`
       ],
-      {
-        stdio: 'inherit'
-      }
+      { stdio: 'inherit' }
     )
     removeProcess.on('close', () => {
       console.log('')

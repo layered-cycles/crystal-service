@@ -3,10 +3,7 @@ import Skia
 
 func createEngineRouter() -> EngineRouter {
   let router = EngineRouter.default()
-  router.post(
-    ApiRequest.self, 
-    at: "api") 
-  { 
+  router.post(ApiRequest.self) { 
     httpRequest, apiRequest -> Response in
     switch apiRequest {
     case .renderFrame(let descriptionPayload):
