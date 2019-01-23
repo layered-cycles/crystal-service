@@ -1,18 +1,19 @@
-import Skia
+import CrystalFrameInterface
 
-struct FooLayer: FrameLayer {
+struct FooLayer: Layer {
   static let type = "Foo"
-  let center: Skia.Point
-  let radius: Float
-  let color: Skia.Color
-  func draw(in canvas: Canvas) {
-    let circlePath = Path()
+  let center: Point
+  let radius: Double
+  let color: Color
+  func draw(
+    inCanvas canvas: Canvas) 
+  {
+    let circlePath = canvas.createPath()
     circlePath.addCircle(
-      center: center, 
-      radius: radius)
-    canvas.drawPath(
+      withCenter: center, 
+      withRadius: radius)
+    canvas.fill(
       path: circlePath, 
-      color: color)
-      
+      withColor: color)      
   }
 }

@@ -1,106 +1,132 @@
  import Foundation
  import Skia
+ import CrystalFrameInterface
  
  enum Frame {
   static func render(
-    width: Int, 
-    height: Int, 
-    layers: [AnyFrameLayer]) -> Data
+    width: Double, 
+    height: Double, 
+    layers: [AnyLayer]) -> Data
   { 
     var renderFrameCallbacks = RenderFrameCallbacks(
       onRender: { 
-        (canvasPointer, layersPointer) in    
-        let canvas = Canvas(canvasPointer) 
-        let refreshedLayersRef = Unmanaged<FrameLayersRef>
+        (canvasPointer, frameWidth, frameHeight, layersPointer) in    
+        let canvas = Canvas(
+          width: frameWidth,
+          height: frameHeight, 
+          skiaPointer: canvasPointer) 
+        let frameLayers = Unmanaged<LayersRef>
           .fromOpaque(layersPointer)
           .takeUnretainedValue()
-        for layer in refreshedLayersRef.value {
+          .value
+        for layer in frameLayers {
           layer.base.draw(
-            in: canvas)
+            inCanvas: canvas)
         }
       },
       onRendered: {
         (dataPointer, byteCount, resultDataPointer) in
-        let refreshedResultRef = Unmanaged<FrameDataRef>
+        let refreshedResultRef = Unmanaged<DataRef>
           .fromOpaque(resultDataPointer)
           .takeUnretainedValue()
         refreshedResultRef.value = Data(
           bytes: dataPointer, 
           count: Int(byteCount))
       })
-    let layersRef = FrameLayersRef(layers)
+    let layersRef = LayersRef(layers)
     let unmanagedLayersRef = Unmanaged
       .passUnretained(layersRef)
       .toOpaque()
-    let frameLayersPointer = UnsafeMutableRawPointer(unmanagedLayersRef) 
-    let resultRef = FrameDataRef()
+    let layersPointer = UnsafeMutableRawPointer(unmanagedLayersRef) 
+    let resultRef = DataRef()
     let unmanagedResultRef = Unmanaged
       .passUnretained(resultRef)
       .toOpaque()
     let resultPointer = UnsafeMutableRawPointer(unmanagedResultRef) 
     renderFrame(
-      Int32(width), 
-      Int32(height),
-      frameLayersPointer,
+      width, 
+      height,
+      layersPointer,
       resultPointer,
       &renderFrameCallbacks)
     return resultRef.value
   }
-}
 
-final class FrameLayersRef {
-  let value: [AnyFrameLayer] 
-  init(_ layers: [AnyFrameLayer]) {
-    value = layers
+  final class LayersRef {
+    let value: [AnyLayer] 
+    init(_ layers: [AnyLayer]) {
+      value = layers
+    }
+  }
+
+  final class DataRef {
+    var value = Data()
+  }
+
+  struct AnyLayer {
+    let base: Layer
+    init(base: Layer) {
+      self.base = base
+    }
+  }
+
+  struct Canvas {
+    let width: Double 
+    let height: Double
+    let skiaPointer: UnsafeMutableRawPointer
+    init(
+      width: Double, 
+      height: Double, 
+      skiaPointer: UnsafeMutableRawPointer) 
+    {
+      self.width = width 
+      self.height = height
+      self.skiaPointer = skiaPointer
+    }
+    func createPath() -> CrystalFrameInterface.Path {
+      return Frame.Path()
+    }
+  }
+
+  final class Path {
+    let skiaPointer: UnsafeMutableRawPointer
+    let skiaKey: Int32
+    init() {
+      let pathPair = Skia.initPath()
+      skiaPointer = pathPair.pointer
+      skiaKey = pathPair.key
+    }
+    deinit {
+      Skia.deinitPath(skiaKey)
+    }  
   }
 }
 
-final class FrameDataRef {
-  var value = Data()
-}
-
-struct AnyFrameLayer {
-  let base: FrameLayer
-  init(base: FrameLayer) {
-    self.base = base
-  }
-}
-
-protocol FrameLayer: Decodable {
-  static var type: String { get }
-  func draw(in canvas: Canvas)
-}
-
-struct Canvas {
-  let pointer: UnsafeMutableRawPointer
-  init(_ canvasPointer: UnsafeMutableRawPointer) {
-    pointer = canvasPointer
-  }
-  func drawPath(path: Path, color: Skia.Color) {
+extension Frame.Canvas: CrystalFrameInterface.Canvas {
+  func fill(
+    path: CrystalFrameInterface.Path, 
+    withColor color: CrystalFrameInterface.Color) 
+  {
+    let framePath = path as! Frame.Path
     Skia.drawPath(
-      path.skiaPointer,
-      color,
-      pointer)
+      framePath.skiaPointer,
+      Skia.Color(
+        hue: color.hue,
+        saturation: color.saturation,
+        value: color.value),
+      skiaPointer)
   }
 }
 
-final class Path {
-  let skiaPointer: UnsafeMutableRawPointer
-  let skiaKey: Int32
-  init() {
-    let pathPair = Skia.initPath()
-    skiaPointer = pathPair.pointer
-    skiaKey = pathPair.key
-  }
-  deinit {
-    Skia.deinitPath(skiaKey)
-  }  
-}
-
-extension Path {
-  func addCircle(center: Skia.Point, radius: Float) {
+extension Frame.Path: CrystalFrameInterface.Path {
+  func addCircle(
+    withCenter center: CrystalFrameInterface.Point, 
+    withRadius radius: Double) 
+  {
     Skia.addCircleToPath(
-      center, 
+      Skia.Point(
+        x: center.x, 
+        y: center.y), 
       radius, 
       skiaPointer)
   }

@@ -7,29 +7,29 @@
 #include <SkPath.h>
 
 extern void renderFrame(
-    int width,
-    int height,
+    double width,
+    double height,
     void *_Nonnull layersPointer,
     void *_Nonnull resultPointer,
     const RenderFrameCallbacks *callbacks)
 {
-  sk_sp<SkSurface> rasterSurface =
-      SkSurface::MakeRasterN32Premul(
-          width, height);
-  SkCanvas *rasterCanvas =
-      rasterSurface->getCanvas();
-  void *_Nonnull canvasPointer = rasterCanvas;
-  (*callbacks).onRender(canvasPointer, layersPointer);
-  sk_sp<SkImage> renderedImage =
-      rasterSurface->makeImageSnapshot();
-  sk_sp<SkData> renderedData =
-      renderedImage->encodeToData();
-  const void *_Nonnull dataPointer =
-      renderedData->data();
-  unsigned long dataByteCount =
-      renderedData->size();
-  (*callbacks).onRendered(dataPointer, dataByteCount, resultPointer);
-  return;
+    sk_sp<SkSurface> rasterSurface =
+        SkSurface::MakeRasterN32Premul(
+            width, height);
+    SkCanvas *rasterCanvas =
+        rasterSurface->getCanvas();
+    void *_Nonnull canvasPointer = rasterCanvas;
+    (*callbacks).onRender(canvasPointer, width, height, layersPointer);
+    sk_sp<SkImage> renderedImage =
+        rasterSurface->makeImageSnapshot();
+    sk_sp<SkData> renderedData =
+        renderedImage->encodeToData();
+    const void *_Nonnull dataPointer =
+        renderedData->data();
+    unsigned long dataByteCount =
+        renderedData->size();
+    (*callbacks).onRendered(dataPointer, dataByteCount, resultPointer);
+    return;
 }
 
 extern void drawPath(
@@ -37,29 +37,29 @@ extern void drawPath(
     Color fillColor,
     void *_Nonnull canvasPointer)
 {
-  SkPath *path = (SkPath *)pathPointer;
-  SkPaint pathPaint;
-  pathPaint.setAntiAlias(true);
-  SkScalar hsv[3];
-  hsv[0] = fillColor.hue;
-  hsv[1] = fillColor.saturation;
-  hsv[2] = fillColor.value;
-  SkColor paintColor = SkHSVToColor(hsv);
-  pathPaint.setColor(paintColor);
-  SkCanvas *canvas = (SkCanvas *)canvasPointer;
-  canvas->drawPath(
-      *path,
-      pathPaint);
+    SkPath *path = (SkPath *)pathPointer;
+    SkPaint pathPaint;
+    pathPaint.setAntiAlias(true);
+    SkScalar hsv[3];
+    hsv[0] = fillColor.hue;
+    hsv[1] = fillColor.saturation;
+    hsv[2] = fillColor.value;
+    SkColor paintColor = SkHSVToColor(hsv);
+    pathPaint.setColor(paintColor);
+    SkCanvas *canvas = (SkCanvas *)canvasPointer;
+    canvas->drawPath(
+        *path,
+        pathPaint);
 }
 
 extern void addCircleToPath(
     Point center,
-    float radius,
+    double radius,
     void *_Nonnull pathPointer)
 {
-  SkPath *path = (SkPath *)pathPointer;
-  (*path).addCircle(
-      center.x,
-      center.y,
-      radius);
+    SkPath *path = (SkPath *)pathPointer;
+    (*path).addCircle(
+        center.x,
+        center.y,
+        radius);
 }

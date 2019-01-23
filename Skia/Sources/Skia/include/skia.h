@@ -4,19 +4,21 @@ extern "C"
 #endif
   typedef struct
   {
-    float x;
-    float y;
+    double x;
+    double y;
   } Point;
   typedef struct
   {
-    float hue;
-    float saturation;
-    float value;
+    double hue;
+    double saturation;
+    double value;
   } Color;
   struct RenderFrameCallbacks
   {
     void (*_Nonnull onRender)(
         void *_Nonnull canvasPointer,
+        double frameWidth,
+        double frameHeight,
         void *_Nonnull layersPointer);
     void (*_Nonnull onRendered)(
         const void *_Nonnull dataPointer,
@@ -25,13 +27,13 @@ extern "C"
   };
   typedef struct RenderFrameCallbacks RenderFrameCallbacks;
   void renderFrame(
-      int width,
-      int height,
+      double width,
+      double height,
       void *_Nonnull layersPointer,
       void *_Nonnull resultPointer,
       const RenderFrameCallbacks *_Nonnull callbacks);
   void drawPath(void *_Nonnull, Color, void *_Nonnull);
-  void addCircleToPath(Point, float, void *_Nonnull);
+  void addCircleToPath(Point, double, void *_Nonnull);
   struct PathPair
   {
     int key;
