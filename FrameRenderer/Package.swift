@@ -11,12 +11,15 @@ let package = Package(
       url: "../Skia", 
       from: "0.0.0"),
     .package(
-      url: "https://github.com/refectjam/CrystalFrameInterface.git",
-      .branch("next"))
+      url: "../FrameInterface",
+      from: "0.0.0"),
+    .package(
+      url: "../DefaultFrameSchema",
+      from: "0.0.0")
   ],
   targets: [
     .target(
         name: "FrameRenderer",
-        dependencies: ["Vapor", "Skia", "CrystalFrameInterface"])
+        dependencies: ["Vapor", "Skia", "FrameInterface", "FrameSchema"])
   ]
 )

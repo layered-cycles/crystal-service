@@ -1,6 +1,6 @@
  import Foundation
  import Skia
- import CrystalFrameInterface
+ import FrameInterface
  
  enum Frame {
   static func render(
@@ -83,7 +83,7 @@
       self.height = height
       self.skiaPointer = skiaPointer
     }
-    func createPath() -> CrystalFrameInterface.Path {
+    func createPath() -> FrameInterface.Path {
       return Frame.Path()
     }
   }
@@ -102,10 +102,10 @@
   }
 }
 
-extension Frame.Canvas: CrystalFrameInterface.Canvas {
+extension Frame.Canvas: FrameInterface.Canvas {
   func fill(
-    path: CrystalFrameInterface.Path, 
-    withColor color: CrystalFrameInterface.Color) 
+    path: FrameInterface.Path, 
+    withColor color: FrameInterface.Color) 
   {
     let framePath = path as! Frame.Path
     Skia.drawPath(
@@ -118,9 +118,9 @@ extension Frame.Canvas: CrystalFrameInterface.Canvas {
   }
 }
 
-extension Frame.Path: CrystalFrameInterface.Path {
+extension Frame.Path: FrameInterface.Path {
   func addCircle(
-    withCenter center: CrystalFrameInterface.Point, 
+    withCenter center: FrameInterface.Point, 
     withRadius radius: Double) 
   {
     Skia.addCircleToPath(

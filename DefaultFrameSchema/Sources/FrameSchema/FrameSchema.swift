@@ -1,10 +1,23 @@
-import CrystalFrameInterface
+import FrameInterface
 
-struct FooLayer: Layer {
-  static let type = "Foo"
+public
+func getFrameSchema() -> [String: Layer.Type] {
+  return [
+    CircleLayer.type: CircleLayer.self
+  ]
+}
+
+public
+struct CircleLayer: Layer {
+  public
+  static let type = "Circle"
+  public
   let center: Point
+  public
   let radius: Double
+  public
   let color: Color
+  public
   func draw(
     inCanvas canvas: Canvas) 
   {

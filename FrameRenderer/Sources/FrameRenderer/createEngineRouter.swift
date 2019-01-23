@@ -1,5 +1,6 @@
 import Vapor 
 import Skia
+import FrameSchema
 
 func createEngineRouter() -> EngineRouter {
   let router = EngineRouter.default()
@@ -72,8 +73,7 @@ extension Frame.AnyLayer: Decodable {
     let layerType = try keysContainer.decode(
       String.self,
       forKey: .type)
-    let LayerType = FrameLayerManager
-      .availableLayerTypes[layerType]!
+    let LayerType = getFrameSchema()[layerType]!
     let layerDecoder = try keysContainer.superDecoder(
       forKey: .inputs)
     let baseLayer = try LayerType.init(
