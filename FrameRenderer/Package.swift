@@ -5,15 +5,18 @@ let package = Package(
   name: "FrameRenderer",
   dependencies: [
     .package(
-        url: "https://github.com/vapor/vapor.git", 
-        from: "3.0.0"),
+      url: "https://github.com/vapor/vapor.git", 
+      from: "3.0.0"),
     .package(
       url: "../Skia", 
+      from: "0.0.0"),
+    .package(
+      url: "../FrameInterface",
       from: "0.0.0")
   ],
   targets: [
     .target(
         name: "FrameRenderer",
-        dependencies: ["Vapor", "Skia"])
+        dependencies: ["Vapor", "Skia", "FrameInterface"])
   ]
 )

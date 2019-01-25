@@ -165,7 +165,7 @@ function* updateFrameRendererExecutable({
 
 function buildFrameRendererExecutable({ buildServerContainerId }) {
   return new Promise(resolve => {
-    console.log('buidling frame renderer executable...')
+    console.log('building frame renderer executable...')
     const buildProcess = Child.spawn(
       'docker',
       [
@@ -327,7 +327,11 @@ function initSourceChangeWatcher() {
   return new Promise(resolve => {
     const sourceChangeChannel = eventChannel(emitMessage => {
       createFileWatcher(
-        ['../FrameRenderer/Sources', '../Skia/Sources'],
+        [
+          '../FrameRenderer/Sources',
+          '../FrameInterface/Sources',
+          '../Skia/Sources'
+        ],
         {
           recursive: true
         },
