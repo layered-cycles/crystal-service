@@ -33,11 +33,11 @@ func createEngineRouter() -> EngineRouter {
       return imageResponse
     }    
   }
-  router.post("loadLayersLibrary") {
+  router.post("loadFrameSchema") {
     httpRequest -> Future<HTTPStatus> in
     return try httpRequest
       .content
-      .decode(LoadLayersLibraryPayload.self)
+      .decode(LoadFrameSchemaPayload.self)
       .map(to: HTTPStatus.self) 
     { 
       loadLayersLibraryPayload in      
@@ -77,7 +77,7 @@ struct RenderFrameImagePayload: Decodable {
   let layers: [Frame.AnyLayer]
 }
 
-struct LoadLayersLibraryPayload: Decodable {
+struct LoadFrameSchemaPayload: Decodable {
   let sharedObject: Data
 }
 
