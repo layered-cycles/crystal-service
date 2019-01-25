@@ -1,3 +1,13 @@
+
+public final class Schema {
+  public
+  let layers: [String: Layer.Type]
+  public
+  init(layers: [String: Layer.Type]) {
+    self.layers = layers
+  }
+}
+
 public
 protocol Layer: Decodable {
   static var type: String { get }

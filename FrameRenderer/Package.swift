@@ -12,14 +12,11 @@ let package = Package(
       from: "0.0.0"),
     .package(
       url: "../FrameInterface",
-      from: "0.0.0"),
-    .package(
-      url: "../DefaultFrameSchema",
       from: "0.0.0")
   ],
   targets: [
     .target(
         name: "FrameRenderer",
-        dependencies: ["Vapor", "Skia", "FrameInterface", "FrameSchema"])
+        dependencies: ["Vapor", "Skia", "FrameInterface"])
   ]
 )

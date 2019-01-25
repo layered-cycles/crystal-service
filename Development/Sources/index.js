@@ -156,11 +156,7 @@ function* updateFrameRendererExecutable({
 }) {
   yield call(buildFrameRendererExecutable, { buildServerContainerId })
   yield call(copyFrameRendererExecutableToHost, { buildServerContainerId })
-  yield call(copyDefaultFrameSchemaLibraryToHost, { buildServerContainerId })
   yield call(copyFrameRendererExecutableToFrameRendererContainer, {
-    frameRendererContainerId
-  })
-  yield call(copyDefaultFrameSchemaLibraryToFrameRendererContainer, {
     frameRendererContainerId
   })
   yield call(stopActiveFrameRendererExecutable, { frameRendererContainerId })
@@ -242,25 +238,6 @@ function copyFrameRendererExecutableToHost({ buildServerContainerId }) {
   })
 }
 
-function copyDefaultFrameSchemaLibraryToHost({ buildServerContainerId }) {
-  return new Promise(resolve => {
-    console.log('copying default frame schema library to host...')
-    const copyProcess = Child.spawn(
-      'docker',
-      [
-        'cp',
-        `${buildServerContainerId}:/crystal-development/FrameRenderer/.build/x86_64-unknown-linux/debug/libFrameSchema.so`,
-        './Temp'
-      ],
-      { stdio: 'inherit' }
-    )
-    copyProcess.on('close', () => {
-      console.log('')
-      resolve()
-    })
-  })
-}
-
 function copyFrameRendererExecutableToFrameRendererContainer({
   frameRendererContainerId
 }) {
@@ -273,29 +250,6 @@ function copyFrameRendererExecutableToFrameRendererContainer({
       [
         'cp',
         './Temp/FrameRenderer',
-        `${frameRendererContainerId}:/frame-renderer/`
-      ],
-      { stdio: 'inherit' }
-    )
-    copyProcess.on('close', () => {
-      console.log('')
-      resolve()
-    })
-  })
-}
-
-function copyDefaultFrameSchemaLibraryToFrameRendererContainer({
-  frameRendererContainerId
-}) {
-  return new Promise(resolve => {
-    console.log(
-      'copying default frame schema library to frame renderer container...'
-    )
-    const copyProcess = Child.spawn(
-      'docker',
-      [
-        'cp',
-        './Temp/libFrameSchema.so',
         `${frameRendererContainerId}:/frame-renderer/`
       ],
       { stdio: 'inherit' }
@@ -376,7 +330,6 @@ function initSourceChangeWatcher() {
         [
           '../FrameRenderer/Sources',
           '../FrameInterface/Sources',
-          '../DefaultFrameSchema/Sources',
           '../Skia/Sources'
         ],
         {

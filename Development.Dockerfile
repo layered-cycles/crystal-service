@@ -6,7 +6,6 @@ RUN apt-get update \
   libpng-dev
 COPY ./FrameRenderer ./FrameRenderer
 COPY ./FrameInterface ./FrameInterface
-COPY ./DefaultFrameSchema ./DefaultFrameSchema
 COPY ./SkiaBuild ./SkiaBuild
 COPY ./Skia ./Skia
 RUN cd Skia \
@@ -21,14 +20,6 @@ RUN cd FrameInterface \
   && git add -A \
   && git commit -m "Initial commit" \
   && git tag -a 0.0.0 -m "0.0.0"
-RUN cd DefaultFrameSchema \
-  && git init \
-  && git add -A \
-  && git commit -m "Initial commit" \
-  && git tag -a 0.0.0 -m "0.0.0"
 RUN cd FrameRenderer \
   && swift package edit Skia --path ../Skia \
-  && swift package edit FrameInterface --path ../FrameInterface \
-  && swift package edit FrameSchema --path ../DefaultFrameSchema
-RUN cd DefaultFrameSchema \
   && swift package edit FrameInterface --path ../FrameInterface
