@@ -12,73 +12,76 @@ var _frameSchemaLibHandle: UnsafeMutableRawPointer? = nil
 fileprivate
 var _frameSchema = Schema(layers: [:])
 
-
 func createEngineRouter() -> EngineRouter {
   let router = EngineRouter.default()
-  router.post("renderFrameImage") { 
-    httpRequest -> Future<Response> in
-    return try httpRequest
-      .content
-      .decode(RenderFrameImagePayload.self)
-      .map(to: Response.self) 
-    {
-      renderFrameImagePayload in
-      let frameData = Frame.render(
-        width: renderFrameImagePayload.width, 
-        height: renderFrameImagePayload.height, 
-        layers: renderFrameImagePayload.layers)
-      let imageResponse = httpRequest.response(
-        frameData, 
-        as: MediaType.png)
-      return imageResponse
-    }    
+  router.post(
+    CompileFrameSchemaPayload.self, 
+    at: "compileFrameSchema") 
+  { 
+    httpRequest, compileFrameSchemaPayload -> Response in
+    compileFrameSchemaPayload.sourceCode
+    return httpRequest.response()  
   }
-  router.post("loadFrameSchema") {
-    httpRequest -> Future<HTTPStatus> in
-    return try httpRequest
-      .content
-      .decode(LoadFrameSchemaPayload.self)
-      .map(to: HTTPStatus.self) 
-    { 
-      loadLayersLibraryPayload in      
-      let targetLibUrl = URL(
-        fileURLWithPath: "./libFrameSchema.so")
-      try loadLayersLibraryPayload
-        .sharedObject
-        .write(
-          to: targetLibUrl, 
-          options: .atomic)
-      if _frameSchemaLibHandle != nil {
-        dlclose(_frameSchemaLibHandle!)
-      }
-      _frameSchemaLibHandle = dlopen(
-        "./libFrameSchema.so", 
-        RTLD_NOW)
-      let getFrameSchemaSymbolName = "getFrameSchema"
-      let getFrameSchemaSymbol = dlsym(
-        _frameSchemaLibHandle, 
-        getFrameSchemaSymbolName)
-      let getFrameSchemaPointer = unsafeBitCast(
-        getFrameSchemaSymbol, 
-        to: GetFrameSchemaClosure.self)
-      let frameSchemaPointer = getFrameSchemaPointer()
-      _frameSchema = Unmanaged<Schema>
-        .fromOpaque(frameSchemaPointer)
-        .takeRetainedValue()
-      return .ok        
+  router.post(
+    LoadFrameSchemaPayload.self,
+    at: "loadFrameSchema") 
+  {
+    httpRequest, loadFrameSchemaPayload -> HTTPStatus in      
+    let targetLibUrl = URL(
+      fileURLWithPath: "./libFrameSchema.so")
+    try loadFrameSchemaPayload
+      .sharedObject
+      .write(
+        to: targetLibUrl, 
+        options: .atomic)
+    if _frameSchemaLibHandle != nil {
+      dlclose(_frameSchemaLibHandle!)
     }
+    _frameSchemaLibHandle = dlopen(
+      "./libFrameSchema.so", 
+      RTLD_NOW)
+    let getFrameSchemaSymbolName = "getFrameSchema"
+    let getFrameSchemaSymbol = dlsym(
+      _frameSchemaLibHandle, 
+      getFrameSchemaSymbolName)
+    let getFrameSchemaPointer = unsafeBitCast(
+      getFrameSchemaSymbol, 
+      to: GetFrameSchemaClosure.self)
+    let frameSchemaPointer = getFrameSchemaPointer()
+    _frameSchema = Unmanaged<Schema>
+      .fromOpaque(frameSchemaPointer)
+      .takeRetainedValue()
+    return .ok  
+  }
+  router.post(
+    RenderFrameImagePayload.self, 
+    at: "renderFrameImage") 
+  { 
+    httpRequest, renderFrameImagePayload -> Response in
+    let frameData = Frame.render(
+      width: renderFrameImagePayload.width, 
+      height: renderFrameImagePayload.height, 
+      layers: renderFrameImagePayload.layers)
+    let imageResponse = httpRequest.response(
+      frameData, 
+      as: MediaType.png)
+    return imageResponse   
   }
   return router
 }
 
-struct RenderFrameImagePayload: Decodable {
+struct CompileFrameSchemaPayload: Content {
+  let sourceCode: String
+}
+
+struct LoadFrameSchemaPayload: Content {
+  let sharedObject: Data
+}
+
+struct RenderFrameImagePayload: Content {
   let width: Double 
   let height: Double
   let layers: [Frame.AnyLayer]
-}
-
-struct LoadFrameSchemaPayload: Decodable {
-  let sharedObject: Data
 }
 
 extension Frame.AnyLayer: Decodable {
@@ -99,5 +102,12 @@ extension Frame.AnyLayer: Decodable {
   private 
   enum CodingKeys: String, CodingKey {
     case type, inputs
+  }
+}
+
+extension Frame.AnyLayer: Encodable {
+  public 
+  func encode(to encoder: Encoder) throws {
+    fatalError("WTF?")
   }
 }
