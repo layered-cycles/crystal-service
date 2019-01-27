@@ -1,5 +1,6 @@
 
-public final class Schema {
+public 
+final class Schema {
   public
   let layers: [String: Layer.Type]
   public

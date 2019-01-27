@@ -1,6 +1,7 @@
 import Vapor 
 import Skia
 import FrameInterface
+import Foundation
 
 fileprivate
 typealias GetFrameSchemaClosure = 
@@ -18,9 +19,43 @@ func createEngineRouter() -> EngineRouter {
     CompileFrameSchemaPayload.self, 
     at: "compileFrameSchema") 
   { 
-    httpRequest, compileFrameSchemaPayload -> Response in
-    compileFrameSchemaPayload.sourceCode
-    return httpRequest.response()  
+    httpRequest, compileFrameSchemaPayload -> Future<Response> in
+    let frameSchemaSourceUrl = URL(
+      fileURLWithPath: "./FrameSchema/Sources/FrameSchema/FrameSchema.swift")
+    try compileFrameSchemaPayload
+      .sourceCode
+      .write(
+        to: frameSchemaSourceUrl,
+        atomically: true,
+        encoding: .utf8)
+    let promiseResponse = httpRequest
+      .eventLoop
+      .newPromise(Response.self)
+    let process = Process()
+    process.executableURL = URL(
+      fileURLWithPath:"/usr/bin/swift")
+    process.arguments = ["build", "--package-path", "./FrameSchema"]
+    process.terminationHandler = { 
+      terminatedProcess in
+      if terminatedProcess.terminationStatus == 0 {
+        let compiledLibraryUrl = URL(
+          fileURLWithPath: "./FrameSchema/.build/x86_64-unknown-linux/debug/libFrameSchema.so")
+        let compiledLibraryData = try! Data(
+          contentsOf: compiledLibraryUrl)
+        let compiledLibraryResponse = httpRequest
+          .response(compiledLibraryData)
+        promiseResponse.succeed(
+          result: compiledLibraryResponse)
+      }
+      else {
+        promiseResponse.succeed(
+          result: httpRequest.response(
+            http: HTTPResponse(
+              status: .conflict)))
+      }      
+    }
+    process.launch()
+    return promiseResponse.futureResult
   }
   router.post(
     LoadFrameSchemaPayload.self,
@@ -39,11 +74,11 @@ func createEngineRouter() -> EngineRouter {
     }
     _frameSchemaLibHandle = dlopen(
       "./libFrameSchema.so", 
-      RTLD_NOW)
+      RTLD_NOW)    
     let getFrameSchemaSymbolName = "getFrameSchema"
     let getFrameSchemaSymbol = dlsym(
       _frameSchemaLibHandle, 
-      getFrameSchemaSymbolName)
+      getFrameSchemaSymbolName)  
     let getFrameSchemaPointer = unsafeBitCast(
       getFrameSchemaSymbol, 
       to: GetFrameSchemaClosure.self)
@@ -51,7 +86,7 @@ func createEngineRouter() -> EngineRouter {
     _frameSchema = Unmanaged<Schema>
       .fromOpaque(frameSchemaPointer)
       .takeRetainedValue()
-    return .ok  
+    return .ok
   }
   router.post(
     RenderFrameImagePayload.self, 
