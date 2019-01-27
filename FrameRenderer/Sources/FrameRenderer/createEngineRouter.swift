@@ -31,11 +31,15 @@ func createEngineRouter() -> EngineRouter {
     let promiseResponse = httpRequest
       .eventLoop
       .newPromise(Response.self)
-    let process = Process()
-    process.executableURL = URL(
+    let buildProcess = Process()
+    buildProcess.executableURL = URL(
       fileURLWithPath:"/usr/bin/swift")
-    process.arguments = ["build", "--package-path", "./FrameSchema"]
-    process.terminationHandler = { 
+    buildProcess.arguments = [
+      "build", 
+      "--package-path", 
+      "./FrameSchema"
+    ]
+    buildProcess.terminationHandler = { 
       terminatedProcess in
       if terminatedProcess.terminationStatus == 0 {
         let compiledLibraryUrl = URL(
@@ -54,7 +58,7 @@ func createEngineRouter() -> EngineRouter {
               status: .conflict)))
       }      
     }
-    process.launch()
+    buildProcess.launch()
     return promiseResponse.futureResult
   }
   router.post(
