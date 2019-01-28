@@ -16,7 +16,7 @@ services:
       - 'traefik.backend=core'
       - 'traefik.frontend.rule=Host:localhost'
       - 'traefik.frontend.rule=PathPrefixStrip:/core'
-      - 'traefik.port=8180'
+      - 'traefik.port=3000'
   frame-renderer:
     image: crystal-frame-renderer
     stdin_open: true
