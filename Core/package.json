@@ -1,0 +1,10 @@
+{
+  "name": "crystal-core",
+  "version": "0.1.0",
+  "description": "",
+  "main": "./Sources/index.js",
+  "private": true,
+  "scripts": {
+    "start": "node ./Sources/index.js"
+  }
+}

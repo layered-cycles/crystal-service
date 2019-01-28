@@ -2,7 +2,7 @@
   "name": "crystal-development",
   "version": "0.1.0",
   "description": "development entry-point",
-  "main": "source/index.js",
+  "main": "./Sources/index.js",
   "private": true,
   "dependencies": {
     "create-saga-core": "^0.1.2",
