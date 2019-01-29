@@ -15,13 +15,10 @@ services:
     labels:
       - 'traefik.backend=core'
       - 'traefik.frontend.rule=Host:localhost'
-      - 'traefik.frontend.rule=PathPrefixStrip:/core'
-      - 'traefik.port=3000'
+      - 'traefik.frontend.rule=PathPrefix:/api'
+      - 'traefik.port=80'
   frame-renderer:
     image: crystal-frame-renderer
     stdin_open: true
     labels:
       - 'traefik.backend=frame-renderer'
-      - 'traefik.frontend.rule=Host:localhost'
-      - 'traefik.frontend.rule=PathPrefixStrip:/renderer'
-      - 'traefik.port=8181'

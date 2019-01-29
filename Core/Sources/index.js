@@ -47,7 +47,7 @@ function createApiChannel() {
       })
       return () => null
     }, buffers.expanding())
-    apiServer.listen(3000, () => resolve({ apiChannel }))
+    apiServer.listen(80, () => resolve({ apiChannel }))
   })
 }
 
@@ -63,7 +63,7 @@ function compileFrameSchemaSourceCode({ sourceCode }) {
   return new Promise(resolve => {
     Request.post(
       {
-        url: 'http://crystal_frame-renderer_1:8181/compileFrameSchema',
+        url: 'http://frame-renderer/compileFrameSchema',
         formData: {
           sourceCode: decodeURIComponent(sourceCode)
         },
@@ -83,7 +83,7 @@ function loadFrameSchemaLibrary({ sharedObject }) {
   return new Promise(resolve => {
     Request.post(
       {
-        url: 'http://crystal_frame-renderer_1:8181/loadFrameSchema',
+        url: 'http://frame-renderer/loadFrameSchema',
         formData: { sharedObject }
       },
       requestError => {
@@ -110,7 +110,7 @@ function renderFrameImage(frameDescription) {
   return new Promise(resolve => {
     Request.post(
       {
-        url: 'http://crystal_frame-renderer_1:8181/renderFrameImage',
+        url: 'http://frame-renderer/renderFrameImage',
         json: frameDescription,
         encoding: null
       },
