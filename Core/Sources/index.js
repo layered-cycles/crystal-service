@@ -21,6 +21,14 @@ function* apiProcessor() {
           apiRequest.responder,
           apiRequest.payload
         )
+        continue
+      case 'RENDER_FRAME_IMAGE':
+        yield call(
+          renderFrameImageHandler,
+          apiRequest.responder,
+          apiRequest.payload
+        )
+        continue
     }
   }
 }
@@ -84,4 +92,39 @@ function loadFrameSchemaLibrary({ sharedObject }) {
       }
     )
   })
+}
+
+function* renderFrameImageHandler(apiResponder, { width, height, layers }) {
+  const { frameImageData } = yield call(renderFrameImage, {
+    width,
+    height,
+    layers
+  })
+  yield call(respondWithFrameImage, {
+    apiResponder,
+    frameImageData
+  })
+}
+
+function renderFrameImage(frameDescription) {
+  return new Promise(resolve => {
+    Request.post(
+      {
+        url: 'http://crystal_frame-renderer_1:8181/renderFrameImage',
+        json: frameDescription,
+        encoding: null
+      },
+      (requestError, requestResponse, requestBody) => {
+        if (requestError) throw requestError
+        resolve({
+          frameImageData: requestBody
+        })
+      }
+    )
+  })
+}
+
+function respondWithFrameImage({ apiResponder, frameImageData }) {
+  apiResponder.contentType('png')
+  apiResponder.send(frameImageData)
 }
