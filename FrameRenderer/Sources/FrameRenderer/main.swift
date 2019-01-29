@@ -5,7 +5,7 @@ let serviceEnvironment = try Environment.detect()
 var serviceServices = Services.default()
 let serverConfig = NIOServerConfig.default(
   hostname: "0.0.0.0",
-  port: 8181)
+  port: 80)
 serviceServices.register(serverConfig)
 let router = createEngineRouter()
 serviceServices.register(

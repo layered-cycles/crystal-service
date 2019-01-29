@@ -47,7 +47,9 @@ func createEngineRouter() -> EngineRouter {
         let compiledLibraryData = try! Data(
           contentsOf: compiledLibraryUrl)
         let compiledLibraryResponse = httpRequest
-          .response(compiledLibraryData)
+          .response(
+            compiledLibraryData, 
+            as: MediaType.binary)        
         promiseResponse.succeed(
           result: compiledLibraryResponse)
       }
