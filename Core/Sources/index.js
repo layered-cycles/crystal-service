@@ -64,9 +64,7 @@ function compileFrameSchemaSourceCode({ sourceCode }) {
     Request.post(
       {
         url: 'http://frame-renderer/compileFrameSchema',
-        formData: {
-          sourceCode: decodeURIComponent(sourceCode)
-        },
+        formData: { sourceCode },
         encoding: null
       },
       (requestError, requestResponse, requestBody) => {
