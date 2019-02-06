@@ -21,7 +21,7 @@ func createEngineRouter() -> EngineRouter {
   { 
     httpRequest, compileFrameSchemaPayload -> Future<Response> in
     let frameSchemaSourceUrl = URL(
-      fileURLWithPath: "./FrameSchema/Sources/FrameSchema/FrameSchema.swift")
+      fileURLWithPath: "./FrameSchema/Sources/FrameSchema/FrameSchemaLayers.swift")
     try compileFrameSchemaPayload
       .sourceCode
       .write(
@@ -57,7 +57,7 @@ func createEngineRouter() -> EngineRouter {
         promiseResponse.succeed(
           result: httpRequest.response(
             http: HTTPResponse(
-              status: .conflict)))
+              status: .badRequest)))
       }      
     }
     buildProcess.launch()
@@ -82,13 +82,20 @@ func createEngineRouter() -> EngineRouter {
       "./libFrameSchema.so", 
       RTLD_NOW)    
     let getFrameSchemaSymbolName = "getFrameSchema"
-    let getFrameSchemaSymbol = dlsym(
+    let maybeGetFrameSchemaSymbol = dlsym(
       _frameSchemaLibHandle, 
-      getFrameSchemaSymbolName)  
+      getFrameSchemaSymbolName)
+    guard let getFrameSchemaSymbol = maybeGetFrameSchemaSymbol 
+    else {
+      return .badRequest
+    }
     let getFrameSchemaPointer = unsafeBitCast(
       getFrameSchemaSymbol, 
       to: GetFrameSchemaClosure.self)
     let frameSchemaPointer = getFrameSchemaPointer()
+    // todo - safe schema retrieval
+    // will crash when `frameSchemaPointer` does not 
+    // point to a valid FrameInterface.Schema instance
     _frameSchema = Unmanaged<Schema>
       .fromOpaque(frameSchemaPointer)
       .takeRetainedValue()
@@ -98,7 +105,7 @@ func createEngineRouter() -> EngineRouter {
     RenderFrameImagePayload.self, 
     at: "renderFrameImage") 
   { 
-    httpRequest, renderFrameImagePayload -> Response in
+    httpRequest, renderFrameImagePayload -> Response in    
     let frameData = Frame.render(
       width: renderFrameImagePayload.width, 
       height: renderFrameImagePayload.height, 
@@ -106,7 +113,7 @@ func createEngineRouter() -> EngineRouter {
     let imageResponse = httpRequest.response(
       frameData, 
       as: MediaType.png)
-    return imageResponse   
+    return imageResponse  
   }
   return router
 }
@@ -132,17 +139,25 @@ extension Frame.AnyLayer: Decodable {
     let layerType = try keysContainer.decode(
       String.self,
       forKey: .type)
-    let LayerType = _frameSchema.layers[layerType]!
+    guard let LayerType = _frameSchema.layers[layerType] else {
+      throw SchemaError.layerNotFound
+    }
     let layerDecoder = try keysContainer.superDecoder(
-      forKey: .inputs)
+        forKey: .inputs)
     let baseLayer = try LayerType.init(
       from: layerDecoder)
     self.init(
-      base: baseLayer)
+      base: baseLayer)    
   }
+
   private 
   enum CodingKeys: String, CodingKey {
     case type, inputs
+  }
+
+  private
+  enum SchemaError: Error {
+    case layerNotFound
   }
 }
 

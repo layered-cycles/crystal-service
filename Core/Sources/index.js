@@ -29,6 +29,9 @@ function* apiProcessor() {
           apiRequest.payload
         )
         continue
+      default:
+        apiResponder.statusCode = 400
+        apiResponder.send()
     }
   }
 }
@@ -52,15 +55,20 @@ function createApiChannel() {
 }
 
 function* loadFrameSchemaHandler(apiResponder, { sourceCode }) {
-  const { sharedObject } = yield call(compileFrameSchemaSourceCode, {
-    sourceCode
-  })
-  yield call(loadFrameSchemaLibrary, { sharedObject })
-  apiResponder.send()
+  try {
+    const { sharedObject } = yield call(compileFrameSchemaSourceCode, {
+      sourceCode
+    })
+    yield call(loadFrameSchemaLibrary, { sharedObject })
+    apiResponder.send()
+  } catch {
+    apiResponder.statusCode = 400
+    apiResponder.send()
+  }
 }
 
 function compileFrameSchemaSourceCode({ sourceCode }) {
-  return new Promise(resolve => {
+  return new Promise((resolve, reject) => {
     Request.post(
       {
         url: 'http://frame-renderer/compileFrameSchema',
@@ -68,7 +76,14 @@ function compileFrameSchemaSourceCode({ sourceCode }) {
         encoding: null
       },
       (requestError, requestResponse, requestBody) => {
-        if (requestError) throw requestError
+        if (requestError) {
+          reject(requestError)
+          return
+        }
+        if (requestResponse.statusCode === 400) {
+          reject()
+          return
+        }
         resolve({
           sharedObject: requestBody
         })
@@ -78,14 +93,21 @@ function compileFrameSchemaSourceCode({ sourceCode }) {
 }
 
 function loadFrameSchemaLibrary({ sharedObject }) {
-  return new Promise(resolve => {
+  return new Promise((resolve, reject) => {
     Request.post(
       {
         url: 'http://frame-renderer/loadFrameSchema',
         formData: { sharedObject }
       },
-      requestError => {
-        if (requestError) throw requestError
+      (requestError, requestResponse, requestBody) => {
+        if (requestError) {
+          reject(requestError)
+          return
+        }
+        if (requestResponse.statusCode === 400) {
+          reject()
+          return
+        }
         resolve()
       }
     )
@@ -93,19 +115,22 @@ function loadFrameSchemaLibrary({ sharedObject }) {
 }
 
 function* renderFrameImageHandler(apiResponder, { width, height, layers }) {
-  const { frameImageData } = yield call(renderFrameImage, {
-    width,
-    height,
-    layers
-  })
-  yield call(respondWithFrameImage, {
-    apiResponder,
-    frameImageData
-  })
+  try {
+    const { frameImageData } = yield call(renderFrameImage, {
+      width,
+      height,
+      layers
+    })
+    apiResponder.contentType('png')
+    apiResponder.send(frameImageData)
+  } catch (renderError) {
+    apiResponder.statusCode = 400
+    apiResponder.send()
+  }
 }
 
 function renderFrameImage(frameDescription) {
-  return new Promise(resolve => {
+  return new Promise((resolve, reject) => {
     Request.post(
       {
         url: 'http://frame-renderer/renderFrameImage',
@@ -113,16 +138,18 @@ function renderFrameImage(frameDescription) {
         encoding: null
       },
       (requestError, requestResponse, requestBody) => {
-        if (requestError) throw requestError
+        if (requestError) {
+          reject(requestError)
+          return
+        }
+        if (requestBody.error) {
+          reject(requestBody.reason)
+          return
+        }
         resolve({
           frameImageData: requestBody
         })
       }
     )
   })
-}
-
-function respondWithFrameImage({ apiResponder, frameImageData }) {
-  apiResponder.contentType('png')
-  apiResponder.send(frameImageData)
 }
