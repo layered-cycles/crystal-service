@@ -6,8 +6,12 @@
   static func render(
     width: Double, 
     height: Double, 
-    layers: [AnyLayer]) -> Data
+    layers: [AnyLayer]) throws -> Data 
   { 
+    guard width > 0 && height > 0 
+    else { 
+      throw RenderError.invalidDimensions 
+    }
     var renderFrameCallbacks = RenderFrameCallbacks(
       onRender: { 
         (canvasPointer, frameWidth, frameHeight, layersPointer) in    
@@ -50,6 +54,10 @@
       resultPointer,
       &renderFrameCallbacks)
     return resultRef.value
+  }
+
+  enum RenderError: Error {
+    case invalidDimensions
   }
 
   final class LayersRef {

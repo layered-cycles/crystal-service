@@ -142,6 +142,10 @@ function renderFrameImage(frameDescription) {
           reject(requestError)
           return
         }
+        if (requestResponse.statusCode === 400) {
+          reject()
+          return
+        }
         if (requestBody.error) {
           reject(requestBody.reason)
           return

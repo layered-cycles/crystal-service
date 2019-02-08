@@ -105,15 +105,23 @@ func createEngineRouter() -> EngineRouter {
     RenderFrameImagePayload.self, 
     at: "renderFrameImage") 
   { 
-    httpRequest, renderFrameImagePayload -> Response in    
-    let frameData = Frame.render(
-      width: renderFrameImagePayload.width, 
-      height: renderFrameImagePayload.height, 
-      layers: renderFrameImagePayload.layers)
-    let imageResponse = httpRequest.response(
-      frameData, 
-      as: MediaType.png)
-    return imageResponse  
+    httpRequest, renderFrameImagePayload -> Response in
+    do {
+      let frameData = try Frame.render(
+        width: renderFrameImagePayload.width, 
+        height: renderFrameImagePayload.height, 
+        layers: renderFrameImagePayload.layers)    
+      let imageResponse = httpRequest.response(
+        frameData, 
+        as: MediaType.png)
+      return imageResponse 
+    }    
+    catch let renderError {
+      let badRequestResponse = HTTPResponse(
+        status: .badRequest)
+      return httpRequest.response(
+        http: badRequestResponse)
+    }
   }
   return router
 }
