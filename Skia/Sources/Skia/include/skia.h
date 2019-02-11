@@ -2,12 +2,6 @@
 extern "C"
 {
 #endif
-
-  typedef struct
-  {
-    double width;
-    double height;
-  } Size;
   typedef struct
   {
     double x;
@@ -40,7 +34,7 @@ extern "C"
       const RenderFrameCallbacks *_Nonnull callbacks);
   void drawPath(void *_Nonnull, Color, void *_Nonnull);
   void addCircleToPath(Point, double, void *_Nonnull);
-  void addRectangleToPath(Point, Size, void *_Nonnull);
+  void addRectangleToPath(double, double, double, double, void *_Nonnull);
   struct PathPair
   {
     int key;

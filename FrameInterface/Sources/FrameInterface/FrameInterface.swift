@@ -71,5 +71,10 @@ struct Color: Decodable {
   var saturation: Double
   public
   var value: Double
+  public init(hue: Double, saturation: Double, value: Double) {
+    self.hue = hue
+    self.saturation = saturation
+    self.value = value
+  }
 }
 

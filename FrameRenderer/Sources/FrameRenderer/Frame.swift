@@ -136,7 +136,7 @@ extension Frame.Path: FrameInterface.Path {
     Skia.addCircleToPath(
       center.skiaPoint, 
       radius, 
-      skiaPointer)
+      self.skiaPointer)
   }
 
   func addRectangle(
@@ -144,9 +144,11 @@ extension Frame.Path: FrameInterface.Path {
     withSize size: FrameInterface.Size) 
   {
     Skia.addRectangleToPath(
-      origin.skiaPoint, 
-      size.skiaSize, 
-      skiaPointer)
+      origin.x,
+      origin.y,
+      origin.x + size.width,
+      origin.y + size.height,
+      self.skiaPointer)
   }
 }
 
@@ -155,13 +157,5 @@ extension FrameInterface.Point {
     return Skia.Point(
       x: self.x, 
       y: self.y)
-  }
-}
-
-extension FrameInterface.Size {
-  var skiaSize: Skia.Size {
-    return Skia.Size(
-      width: self.width, 
-      height: self.height)
   }
 }

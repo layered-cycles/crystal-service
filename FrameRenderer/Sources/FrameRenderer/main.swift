@@ -1,7 +1,5 @@
 import Vapor
 
-
-
 let serviceConfig = Config.default()
 let serviceEnvironment = try Environment.detect()
 var serviceServices = Services.default()
