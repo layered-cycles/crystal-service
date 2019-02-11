@@ -93,9 +93,6 @@ func createEngineRouter() -> EngineRouter {
       getFrameSchemaSymbol, 
       to: GetFrameSchemaClosure.self)
     let frameSchemaPointer = getFrameSchemaPointer()
-    // todo - safe schema retrieval
-    // will crash when `frameSchemaPointer` does not 
-    // point to a valid FrameInterface.Schema instance
     _frameSchema = Unmanaged<Schema>
       .fromOpaque(frameSchemaPointer)
       .takeRetainedValue()
@@ -116,7 +113,7 @@ func createEngineRouter() -> EngineRouter {
         as: MediaType.png)
       return imageResponse 
     }    
-    catch let renderError {
+    catch _ {
       let badRequestResponse = HTTPResponse(
         status: .badRequest)
       return httpRequest.response(

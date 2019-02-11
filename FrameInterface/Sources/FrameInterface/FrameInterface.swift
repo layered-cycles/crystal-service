@@ -23,14 +23,18 @@ protocol Canvas {
   func fill(
     path: Path, 
     withColor color: Color)
-  func createPath() -> Path 
+  var Path: () -> Path { get }
 }
 
 public
 protocol Path {
+  init()
   func addCircle(
-    withCenter center: Point,
-    withRadius radius: Double)
+    withCenter: Point, 
+    withRadius: Double)
+  func addRectangle(
+    withOrigin: Point, 
+    withSize: Size)
 }
 
 public
@@ -39,6 +43,24 @@ struct Point: Decodable {
   var x: Double
   public
   var y: Double
+  public
+  init(x: Double, y: Double) {
+    self.x = x
+    self.y = y
+  }
+}
+
+public
+struct Size: Decodable {
+  public
+  var width: Double 
+  public
+  var height: Double
+  public
+  init(width: Double, height: Double) {
+    self.width = width
+    self.height = height
+  }
 }
 
 public

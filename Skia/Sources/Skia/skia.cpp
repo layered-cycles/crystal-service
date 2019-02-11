@@ -63,3 +63,16 @@ extern void addCircleToPath(
         center.y,
         radius);
 }
+
+extern void addRectangleToPath(
+    Point origin,
+    Size size,
+    void *_Nonnull pathPointer)
+{
+    SkPath *path = (SkPath *)pathPointer;
+    (*path).addRect(
+        origin.x,
+        origin.y,
+        size.width,
+        size.height);
+}

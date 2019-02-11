@@ -79,6 +79,7 @@
   }
 
   struct Canvas {
+    typealias PointType = Skia.Point
     let width: Double 
     let height: Double
     let skiaPointer: UnsafeMutableRawPointer
@@ -90,9 +91,6 @@
       self.width = width 
       self.height = height
       self.skiaPointer = skiaPointer
-    }
-    func createPath() -> FrameInterface.Path {
-      return Frame.Path()
     }
   }
 
@@ -111,6 +109,10 @@
 }
 
 extension Frame.Canvas: FrameInterface.Canvas {
+  var Path: () -> FrameInterface.Path {
+    return Frame.Path.init
+  }
+
   func fill(
     path: FrameInterface.Path, 
     withColor color: FrameInterface.Color) 
@@ -132,10 +134,34 @@ extension Frame.Path: FrameInterface.Path {
     withRadius radius: Double) 
   {
     Skia.addCircleToPath(
-      Skia.Point(
-        x: center.x, 
-        y: center.y), 
+      center.skiaPoint, 
       radius, 
       skiaPointer)
+  }
+
+  func addRectangle(
+    withOrigin origin: FrameInterface.Point, 
+    withSize size: FrameInterface.Size) 
+  {
+    Skia.addRectangleToPath(
+      origin.skiaPoint, 
+      size.skiaSize, 
+      skiaPointer)
+  }
+}
+
+extension FrameInterface.Point {
+  var skiaPoint: Skia.Point {
+    return Skia.Point(
+      x: self.x, 
+      y: self.y)
+  }
+}
+
+extension FrameInterface.Size {
+  var skiaSize: Skia.Size {
+    return Skia.Size(
+      width: self.width, 
+      height: self.height)
   }
 }

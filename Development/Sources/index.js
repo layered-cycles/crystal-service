@@ -4,6 +4,8 @@ const { call, spawn, take } = require('redux-saga/effects')
 const createSagaCore = require('create-saga-core')
 const createFileWatcher = require('node-watch')
 
+const FRAME_INTERFACE_PATTERN = /^\.\.\/FrameInterface\/.+/
+
 const SourceChangeMessageType = {
   UPDATED: 'UPDATED__SOURCE_CHANGE_MESSAGE_TYPE',
   REMOVED: 'REMOVED__SOURCE_CHANGE_MESSAGE_TYPE'
@@ -444,6 +446,15 @@ function* frameRendererSourceProcessor({
     switch (changeMessage.type) {
       case SourceChangeMessageType.UPDATED:
         const { updatedFilePath } = changeMessage.payload
+        const frameInterfaceSource = FRAME_INTERFACE_PATTERN.test(
+          updatedFilePath
+        )
+        if (frameInterfaceSource) {
+          yield call(copySourceFileToFrameRenderer, {
+            frameRendererContainerId,
+            updatedFilePath
+          })
+        }
         yield call(copySourceFileToBuildServer, {
           buildServerContainerId,
           updatedFilePath
@@ -455,6 +466,12 @@ function* frameRendererSourceProcessor({
         continue
       case SourceChangeMessageType.REMOVED:
         const { removedFilePath } = changeMessage.payload
+        if (FRAME_INTERFACE_PATTERN.test(removedFilePath)) {
+          yield call(removeSourceFileOnFrameRenderer, {
+            frameRendererContainerId,
+            removedFilePath
+          })
+        }
         yield call(removeSourceFileOnBuildServer, {
           buildServerContainerId,
           removedFilePath
@@ -466,6 +483,54 @@ function* frameRendererSourceProcessor({
         continue
     }
   }
+}
+
+function copySourceFileToFrameRenderer({
+  frameRendererContainerId,
+  updatedFilePath
+}) {
+  return new Promise(resolve => {
+    const relativeFrameRendererTargetPath = updatedFilePath.substring(3)
+    console.log('copying updated source file to frame renderer...')
+    const transferProcess = Child.spawn(
+      'docker',
+      [
+        'cp',
+        updatedFilePath,
+        `${frameRendererContainerId}:/crystal-frame-renderer/${relativeFrameRendererTargetPath}`
+      ],
+      { stdio: 'inherit' }
+    )
+    transferProcess.on('close', () => {
+      console.log('')
+      resolve()
+    })
+  })
+}
+
+function removeSourceFileOnFrameRenderer({
+  frameRendererContainerId,
+  removedFilePath
+}) {
+  return new Promise(resolve => {
+    const relativeFrameRendererTargetPath = removedFilePath.substring(3)
+    console.log('removing source file on frame renderer...')
+    const removeProcess = Child.spawn(
+      'docker',
+      [
+        'exec',
+        frameRendererContainerId,
+        'rm',
+        '-f',
+        `/crystal-frame-renderer/${relativeFrameRendererTargetPath}`
+      ],
+      { stdio: 'inherit' }
+    )
+    removeProcess.on('close', () => {
+      console.log('')
+      resolve()
+    })
+  })
 }
 
 function copySourceFileToBuildServer({
