@@ -11,7 +11,7 @@ const SourceChangeMessageType = {
   REMOVED: 'REMOVED__SOURCE_CHANGE_MESSAGE_TYPE'
 }
 
-createSagaCore({ initializer }).then(store => {})
+createSagaCore({ initializer })
 
 function* initializer() {
   process.on('SIGINT', process.exit)
@@ -75,15 +75,15 @@ function startBuildServerContainer() {
   return new Promise(resolve => {
     console.log('starting crystal-development container...')
     Child.exec(
-      'docker run -t -i -d crystal-development',
+      'docker run -itd crystal-development',
       (startError, containerId) => {
         if (startError) throw startError
         const buildServerContainerId = containerId.substring(0, 12)
         console.log(`---> ${buildServerContainerId}`)
         console.log('')
-        process.on('exit', () => {
+        process.on('exit', () =>
           Child.exec(`docker rm -f ${buildServerContainerId}`)
-        })
+        )
         resolve({ buildServerContainerId })
       }
     )
@@ -91,54 +91,15 @@ function startBuildServerContainer() {
 }
 
 function* initServiceContainers() {
-  yield call(buildCoreImage)
-  yield call(buildFrameRendererImage)
   yield call(composeServiceContainers)
   const { coreContainerId } = yield call(fetchCoreContainerId)
   const { frameRendererContainerId } = yield call(fetchFrameRendererContainerId)
   return { coreContainerId, frameRendererContainerId }
 }
 
-function buildCoreImage() {
-  return new Promise(resolve => {
-    console.log('building crystal-core image...')
-    const buildProcess = Child.spawn(
-      'docker',
-      ['build', '-t', 'crystal-core', '-f', '../Core.Dockerfile', '../'],
-      { stdio: 'inherit' }
-    )
-    buildProcess.on('close', () => {
-      console.log('')
-      resolve()
-    })
-  })
-}
-
-function buildFrameRendererImage() {
-  return new Promise(resolve => {
-    console.log('building crystal-frame-renderer image...')
-    const buildProcess = Child.spawn(
-      'docker',
-      [
-        'build',
-        '-t',
-        'crystal-frame-renderer',
-        '-f',
-        '../FrameRenderer.Dockerfile',
-        '../'
-      ],
-      { stdio: 'inherit' }
-    )
-    buildProcess.on('close', () => {
-      console.log('')
-      resolve()
-    })
-  })
-}
-
 function composeServiceContainers() {
   return new Promise(resolve => {
-    console.log('composing service containers...')
+    console.log('composing containers...')
     const composeUpProcess = Child.spawn(
       'docker-compose',
       ['--file', '../docker-compose.yaml', 'up', '--detach'],
@@ -163,7 +124,7 @@ function fetchCoreContainerId() {
   console.log('')
   return new Promise(resolve => {
     Child.exec(
-      'docker-compose --file ../docker-compose.yaml ps --quiet core',
+      'docker-compose --file ../docker-compose.yaml ps --quiet service-core',
       (fetchError, containerId) => {
         if (fetchError) throw fetchError
         const coreContainerId = containerId.substring(0, 12)
@@ -360,7 +321,7 @@ function startNewFrameRendererExecutable({ frameRendererContainerId }) {
 
 function* coreSourceProcessor({ coreContainerId }) {
   const { sourceChangeChannel } = yield call(initSourceChangeWatcher, {
-    sourceDirectoriesList: ['../Core/Sources']
+    sourceDirectoriesList: ['../ServiceCore/Sources']
   })
   while (true) {
     const changeMessage = yield take(sourceChangeChannel)
@@ -387,14 +348,14 @@ function* coreSourceProcessor({ coreContainerId }) {
 
 function copySourceFileToCoreContainer({ coreContainerId, updatedFilePath }) {
   return new Promise(resolve => {
-    const relativeCoreContainerTargetPath = updatedFilePath.substring(8)
+    const relativeCoreContainerTargetPath = updatedFilePath.substring(15)
     console.log('copying updated source file to core container...')
     const transferProcess = Child.spawn(
       'docker',
       [
         'cp',
         updatedFilePath,
-        `${coreContainerId}:/crystal-core/${relativeCoreContainerTargetPath}`
+        `${coreContainerId}:/crystal-service-core/${relativeCoreContainerTargetPath}`
       ],
       { stdio: 'inherit' }
     )
@@ -410,7 +371,7 @@ function removeSourceFileFromCoreContainer({
   removedFilePath
 }) {
   return new Promise(resolve => {
-    const relativeCoreContainerTargetPath = removedFilePath.substring(8)
+    const relativeCoreContainerTargetPath = removedFilePath.substring(15)
     console.log('removing source file from core container...')
     const removeProcess = Child.spawn(
       'docker',
@@ -419,7 +380,7 @@ function removeSourceFileFromCoreContainer({
         coreContainerId,
         'rm',
         '-f',
-        `/crystal-core/${relativeCoreContainerTargetPath}`
+        `/crystal-service-core/${relativeCoreContainerTargetPath}`
       ],
       { stdio: 'inherit' }
     )

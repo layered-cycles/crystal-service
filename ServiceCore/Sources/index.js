@@ -39,7 +39,8 @@ function* apiProcessor() {
 function createApiChannel() {
   return new Promise(resolve => {
     const apiServer = Express()
-    apiServer.use(Express.json())
+    const jsonMiddleware = Express.json()
+    apiServer.use(jsonMiddleware)
     const apiChannel = eventChannel(emit => {
       apiServer.post('/api', (httpRequest, httpResponder) => {
         const apiRequest = {
