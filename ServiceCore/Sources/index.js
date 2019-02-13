@@ -32,6 +32,7 @@ function* apiProcessor() {
       default:
         apiResponder.statusCode = 400
         apiResponder.send()
+        continue
     }
   }
 }

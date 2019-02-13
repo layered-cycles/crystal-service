@@ -78,13 +78,9 @@ func createEngineRouter() -> EngineRouter {
     if _frameSchemaLibHandle != nil {
       dlclose(_frameSchemaLibHandle!)
     }
-    _frameSchemaLibHandle = dlopen(
-      "./libFrameSchema.so", 
-      RTLD_NOW)    
+    _frameSchemaLibHandle = dlopen("./libFrameSchema.so", RTLD_NOW)    
     let getFrameSchemaSymbolName = "getFrameSchema"
-    let maybeGetFrameSchemaSymbol = dlsym(
-      _frameSchemaLibHandle, 
-      getFrameSchemaSymbolName)
+    let maybeGetFrameSchemaSymbol = dlsym(_frameSchemaLibHandle, getFrameSchemaSymbolName)
     guard let getFrameSchemaSymbol = maybeGetFrameSchemaSymbol 
     else {
       return .badRequest
@@ -138,13 +134,16 @@ struct RenderFrameImagePayload: Content {
 }
 
 extension Frame.AnyLayer: Decodable {
-  init(from decoder: Decoder) throws {
+  init(
+    from decoder: Decoder) throws 
+  {
     let keysContainer = try decoder.container(
       keyedBy: CodingKeys.self)
     let layerType = try keysContainer.decode(
       String.self,
       forKey: .type)
-    guard let LayerType = _frameSchema.layers[layerType] else {
+    guard let LayerType = _frameSchema.layers[layerType] 
+    else {
       throw SchemaError.layerNotFound
     }
     let layerDecoder = try keysContainer.superDecoder(
@@ -155,20 +154,19 @@ extension Frame.AnyLayer: Decodable {
       base: baseLayer)    
   }
 
-  private 
-  enum CodingKeys: String, CodingKey {
+  private enum CodingKeys: String, CodingKey {
     case type, inputs
   }
 
-  private
-  enum SchemaError: Error {
+  private enum SchemaError: Error {
     case layerNotFound
   }
 }
 
 extension Frame.AnyLayer: Encodable {
-  public 
-  func encode(to encoder: Encoder) throws {
+  public func encode(
+    to encoder: Encoder) throws 
+  {
     fatalError("WTF?")
   }
 }

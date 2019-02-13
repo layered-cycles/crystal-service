@@ -1,18 +1,18 @@
 import Vapor
 
-let serviceConfig = Config.default()
-let serviceEnvironment = try Environment.detect()
-var serviceServices = Services.default()
+let vaporConfig = Config.default()
+let vaporEnvironment = try Environment.detect()
+var vaporServices = Services.default()
 let serverConfig = NIOServerConfig.default(
   hostname: "0.0.0.0",
   port: 80)
-serviceServices.register(serverConfig)
-let router = createEngineRouter()
-serviceServices.register(
-  router, 
+vaporServices.register(serverConfig)
+let vaporRouter = createEngineRouter()
+vaporServices.register(
+  vaporRouter, 
   as: Router.self)
-let app = try Application(
-  config: serviceConfig, 
-  environment: serviceEnvironment, 
-  services: serviceServices)
-try app.run()
+let vaporApp = try Application(
+  config: vaporConfig, 
+  environment: vaporEnvironment, 
+  services: vaporServices)
+try vaporApp.run()

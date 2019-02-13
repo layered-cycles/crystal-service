@@ -14,7 +14,7 @@
     }
     var renderFrameCallbacks = RenderFrameCallbacks(
       onRender: { 
-        (canvasPointer, frameWidth, frameHeight, layersPointer) in    
+        canvasPointer, frameWidth, frameHeight, layersPointer in    
         let canvas = Canvas(
           width: frameWidth,
           height: frameHeight, 
@@ -29,7 +29,7 @@
         }
       },
       onRendered: {
-        (dataPointer, byteCount, resultDataPointer) in
+        dataPointer, byteCount, resultDataPointer in
         let refreshedResultRef = Unmanaged<DataRef>
           .fromOpaque(resultDataPointer)
           .takeUnretainedValue()
@@ -62,7 +62,10 @@
 
   final class LayersRef {
     let value: [AnyLayer] 
-    init(_ layers: [AnyLayer]) {
+
+    init(
+      _ layers: [AnyLayer]) 
+    {
       value = layers
     }
   }
@@ -73,16 +76,15 @@
 
   struct AnyLayer {
     let base: Layer
-    init(base: Layer) {
-      self.base = base
-    }
   }
 
   struct Canvas {
     typealias PointType = Skia.Point
+
     let width: Double 
     let height: Double
     let skiaPointer: UnsafeMutableRawPointer
+
     init(
       width: Double, 
       height: Double, 
@@ -97,13 +99,15 @@
   final class Path {
     let skiaPointer: UnsafeMutableRawPointer
     let skiaKey: Int32
+
     init() {
       let pathPair = Skia.initPath()
-      skiaPointer = pathPair.pointer
-      skiaKey = pathPair.key
+      self.skiaPointer = pathPair.pointer
+      self.skiaKey = pathPair.key
     }
+
     deinit {
-      Skia.deinitPath(skiaKey)
+      Skia.deinitPath(self.skiaKey)
     }  
   }
 }
@@ -115,40 +119,28 @@ extension Frame.Canvas: FrameInterface.Canvas {
 
   func fill(
     path: FrameInterface.Path, 
-    withColor color: FrameInterface.Color) 
+    color: FrameInterface.Color) 
   {
     let framePath = path as! Frame.Path
-    Skia.drawPath(
-      framePath.skiaPointer,
-      Skia.Color(
-        hue: color.hue,
-        saturation: color.saturation,
-        value: color.value),
-      skiaPointer)
+    Skia.drawPath(framePath.skiaPointer, color.skiaColor, self.skiaPointer)
   }
 }
 
 extension Frame.Path: FrameInterface.Path {
   func addCircle(
-    withCenter center: FrameInterface.Point, 
-    withRadius radius: Double) 
+    center: FrameInterface.Point, 
+    radius: Double) 
   {
-    Skia.addCircleToPath(
-      center.skiaPoint, 
-      radius, 
-      self.skiaPointer)
+    Skia.addCircleToPath(center.skiaPoint, radius, self.skiaPointer)
   }
 
   func addRectangle(
-    withOrigin origin: FrameInterface.Point, 
-    withSize size: FrameInterface.Size) 
+    left: Double,
+    top: Double,
+    right: Double,
+    bottom: Double) 
   {
-    Skia.addRectangleToPath(
-      origin.x,
-      origin.y,
-      origin.x + size.width,
-      origin.y + size.height,
-      self.skiaPointer)
+    Skia.addRectangleToPath(left, top, right, bottom, self.skiaPointer)
   }
 }
 
@@ -157,5 +149,14 @@ extension FrameInterface.Point {
     return Skia.Point(
       x: self.x, 
       y: self.y)
+  }
+}
+
+extension FrameInterface.Color {
+  var skiaColor: Skia.Color {
+    return Skia.Color(
+      hue: self.hue, 
+      saturation: self.saturation,
+      value: self.value)
   }
 }
