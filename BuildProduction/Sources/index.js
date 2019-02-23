@@ -66,9 +66,7 @@ function buildCompileFrameRendererImage() {
         './CompileFrameRenderer.Dockerfile',
         '../'
       ],
-      {
-        stdio: 'inherit'
-      }
+      { stdio: 'inherit' }
     )
     buildProcess.on('close', () => {
       console.log('')
@@ -109,9 +107,7 @@ function copyFrameRendererExecutableToStage({
         `${compileFrameRendererContainerId}:/compile-frame-renderer/FrameRenderer/.build/x86_64-unknown-linux/release/FrameRenderer`,
         './Stage'
       ],
-      {
-        stdio: 'inherit'
-      }
+      { stdio: 'inherit' }
     )
     copyProcess.on('close', () => {
       console.log('')
@@ -133,9 +129,7 @@ function buildFrameRendererImage() {
         './FrameRenderer.Dockerfile',
         '../'
       ],
-      {
-        stdio: 'inherit'
-      }
+      { stdio: 'inherit' }
     )
     buildProcess.on('close', () => {
       console.log('')
@@ -150,9 +144,7 @@ function pushFrameRendererImage() {
     const pushProcess = Child.spawn(
       'docker',
       ['push', FRAME_RENDERER_IMAGE_ID],
-      {
-        stdio: 'inherit'
-      }
+      { stdio: 'inherit' }
     )
     pushProcess.on('close', () => {
       console.log('')
@@ -179,9 +171,7 @@ function buildServiceCoreImage() {
         './ServiceCore.Dockerfile',
         '../'
       ],
-      {
-        stdio: 'inherit'
-      }
+      { stdio: 'inherit' }
     )
     buildProcess.on('close', () => {
       console.log('')

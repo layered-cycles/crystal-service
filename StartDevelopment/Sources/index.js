@@ -33,7 +33,7 @@ function* initializer() {
 
 function* initBuildServerContainer() {
   yield call(buildBuildServerImage)
-  yield call(makeTempDirectory)
+  yield call(makeStageDirectory)
   const { buildServerContainerId } = yield call(startBuildServerContainer)
   return { buildServerContainerId }
 }
@@ -44,10 +44,10 @@ function buildBuildServerImage() {
       'docker',
       [
         'build',
-        '-t',
-        'crystal-development',
-        '-f',
-        '../Development/Development.Dockerfile',
+        '--tag',
+        'frame-renderer-build-server',
+        '--file',
+        './FrameRendererBuildServer.Dockerfile',
         '../'
       ],
       { stdio: 'inherit' }
@@ -59,11 +59,11 @@ function buildBuildServerImage() {
   })
 }
 
-function makeTempDirectory() {
+function makeStageDirectory() {
   return new Promise(resolve => {
-    console.log('making Temp directory...')
+    console.log('making stage directory...')
     console.log('')
-    Child.exec('mkdir -p Temp', makeError => {
+    Child.exec('mkdir -p Stage', makeError => {
       if (makeError) throw makeError
       resolve()
     })
@@ -72,9 +72,9 @@ function makeTempDirectory() {
 
 function startBuildServerContainer() {
   return new Promise(resolve => {
-    console.log('starting crystal-development container...')
+    console.log('starting frame-renderer-build-server container...')
     Child.exec(
-      'docker run -itd crystal-development',
+      'docker run -itd frame-renderer-build-server',
       (startError, containerId) => {
         if (startError) throw startError
         const buildServerContainerId = containerId.substring(0, 12)
@@ -117,7 +117,7 @@ function fetchCoreContainerId() {
   console.log('')
   return new Promise(resolve => {
     Child.exec(
-      'docker-compose --file ./docker-compose.yaml ps --quiet service-core',
+      'docker-compose ps --quiet service-core',
       (fetchError, containerId) => {
         if (fetchError) throw fetchError
         const coreContainerId = containerId.substring(0, 12)
@@ -132,7 +132,7 @@ function fetchFrameRendererContainerId() {
   console.log('')
   return new Promise(resolve => {
     Child.exec(
-      'docker-compose --file ./docker-compose.yaml ps --quiet frame-renderer',
+      'docker-compose ps --quiet frame-renderer',
       (fetchError, containerId) => {
         if (fetchError) throw fetchError
         const frameRendererContainerId = containerId.substring(0, 12)
@@ -201,33 +201,33 @@ function buildFrameRendererExecutable({ buildServerContainerId }) {
         '-Xcxx',
         '-std=c++11',
         '-Xcxx',
-        '-I/crystal-development/SkiaBuild/include/c',
+        '-I/frame-renderer-build-server/SkiaWrapper/_Library/include/c',
         '-Xcxx',
-        '-I/crystal-development/SkiaBuild/include/codec',
+        '-I/frame-renderer-build-server/SkiaWrapper/_Library/include/codec',
         '-Xcxx',
-        '-I/crystal-development/SkiaBuild/include/config',
+        '-I/frame-renderer-build-server/SkiaWrapper/_Library/include/config',
         '-Xcxx',
-        '-I/crystal-development/SkiaBuild/include/core',
+        '-I/frame-renderer-build-server/SkiaWrapper/_Library/include/core',
         '-Xcxx',
-        '-I/crystal-development/SkiaBuild/include/docs',
+        '-I/frame-renderer-build-server/SkiaWrapper/_Library/include/docs',
         '-Xcxx',
-        '-I/crystal-development/SkiaBuild/include/effects',
+        '-I/frame-renderer-build-server/SkiaWrapper/_Library/include/effects',
         '-Xcxx',
-        '-I/crystal-development/SkiaBuild/include/encode',
+        '-I/frame-renderer-build-server/SkiaWrapper/_Library/include/encode',
         '-Xcxx',
-        '-I/crystal-development/SkiaBuild/include/gpu',
+        '-I/frame-renderer-build-server/SkiaWrapper/_Library/include/gpu',
         '-Xcxx',
-        '-I/crystal-development/SkiaBuild/include/pathops',
+        '-I/frame-renderer-build-server/SkiaWrapper/_Library/include/pathops',
         '-Xcxx',
-        '-I/crystal-development/SkiaBuild/include/ports',
+        '-I/frame-renderer-build-server/SkiaWrapper/_Library/include/ports',
         '-Xcxx',
-        '-I/crystal-development/SkiaBuild/include/private',
+        '-I/frame-renderer-build-server/SkiaWrapper/_Library/include/private',
         '-Xcxx',
-        '-I/crystal-development/SkiaBuild/include/svg',
+        '-I/frame-renderer-build-server/SkiaWrapper/_Library/include/svg',
         '-Xcxx',
-        '-I/crystal-development/SkiaBuild/include/utils',
+        '-I/frame-renderer-build-server/SkiaWrapper/_Library/include/utils',
         '-Xlinker',
-        '/crystal-development/SkiaBuild/out/Static/libskia.a',
+        '/frame-renderer-build-server/SkiaWrapper/_Library/out/Static/libskia.a',
         '-Xlinker',
         '-lpthread',
         '-Xlinker',
@@ -249,8 +249,8 @@ function copyFrameRendererExecutableToHost({ buildServerContainerId }) {
       'docker',
       [
         'cp',
-        `${buildServerContainerId}:/crystal-development/FrameRenderer/.build/x86_64-unknown-linux/debug/FrameRenderer`,
-        './Temp'
+        `${buildServerContainerId}:/frame-renderer-build-server/FrameRenderer/.build/x86_64-unknown-linux/debug/FrameRenderer`,
+        './Stage'
       ],
       { stdio: 'inherit' }
     )
@@ -272,7 +272,7 @@ function copyFrameRendererExecutableToFrameRendererContainer({
       'docker',
       [
         'cp',
-        './Temp/FrameRenderer',
+        './Stage/FrameRenderer',
         `${frameRendererContainerId}:/crystal-frame-renderer/`
       ],
       { stdio: 'inherit' }
@@ -392,7 +392,7 @@ function* frameRendererSourceProcessor({
     sourceDirectoriesList: [
       '../FrameRenderer/Sources',
       '../FrameInterface/Sources',
-      '../Skia/Sources'
+      '../SkiaWrapper/Sources'
     ]
   })
   while (true) {
@@ -499,7 +499,7 @@ function copySourceFileToBuildServer({
       [
         'cp',
         updatedFilePath,
-        `${buildServerContainerId}:/crystal-development/${relativeBuildServerTargetPath}`
+        `${buildServerContainerId}:/frame-renderer-build-server/${relativeBuildServerTargetPath}`
       ],
       { stdio: 'inherit' }
     )
@@ -524,7 +524,7 @@ function removeSourceFileOnBuildServer({
         buildServerContainerId,
         'rm',
         '-f',
-        `/crystal-development/${relativeBuildServerTargetPath}`
+        `/frame-renderer-build-server/${relativeBuildServerTargetPath}`
       ],
       { stdio: 'inherit' }
     )

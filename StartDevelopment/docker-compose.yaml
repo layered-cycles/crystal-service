@@ -11,7 +11,7 @@ services:
   service-core:
     build:
       context: ../
-      dockerfile: ./Development/ServiceCore.Dockerfile
+      dockerfile: ./StartDevelopment/ServiceCore.Dockerfile
     image: crystal-service-core
     stdin_open: true
     labels:
@@ -22,7 +22,7 @@ services:
   frame-renderer:
     build:
       context: ../
-      dockerfile: ./Development/FrameRenderer.Dockerfile
+      dockerfile: ./StartDevelopment/FrameRenderer.Dockerfile
     image: crystal-frame-renderer
     stdin_open: true
     labels:

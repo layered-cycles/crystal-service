@@ -1,27 +1,16 @@
 {
   "name": "crystal-service",
   "version": "0.1.0",
-  "description": "",
   "private": true,
   "workspaces": {
     "packages": [
-      "Development",
-      "Production",
-      "ServiceCore"
+      "BuildProduction",
+      "ServiceCore",
+      "StartDevelopment"
     ]
   },
   "scripts": {
-    "build-skia": "yarn clean-build-skia && yarn build-skia-image && yarn transfer-skia-build",
-    "clean-build-skia": "echo 'TODO'",
-    "build-skia-image": "docker build -t skia-build -f Skia.Dockerfile .",
-    "transfer-skia-build": "yarn run-skia-image && yarn make-skia-build-directory && yarn copy-skia-build",
-    "run-skia-image": "docker run --name build-skia skia-build",
-    "make-skia-build-directory": "mkdir -p SkiaBuild/out/Static SkiaBuild/third_party",
-    "copy-skia-build": "yarn copy-skia-lib && yarn copy-skia-headers && yarn copy-skia-third_party",
-    "copy-skia-lib": "docker cp build-skia:/skialib/skia/out/Static/libskia.a ./SkiaBuild/out/Static",
-    "copy-skia-headers": "docker cp build-skia:/skialib/skia/include ./SkiaBuild",
-    "copy-skia-third_party": "docker cp build-skia:/skialib/skia/third_party/skcms ./SkiaBuild/third_party",
-    "start-development": "cd Development && yarn start",
-    "build-production": "cd Production && yarn start"
+    "build-production": "cd BuildProduction && yarn start",
+    "start-development": "cd StartDevelopment && yarn start"
   }
 }

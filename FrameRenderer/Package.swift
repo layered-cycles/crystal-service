@@ -8,7 +8,7 @@ let package = Package(
       url: "https://github.com/vapor/vapor.git", 
       from: "3.0.0"),
     .package(
-      url: "../Skia", 
+      url: "../SkiaWrapper", 
       from: "0.1.0"),
     .package(
       url: "../FrameInterface",

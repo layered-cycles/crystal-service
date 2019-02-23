@@ -1,5 +1,5 @@
 FROM swift:4.2
-WORKDIR /skialib
+WORKDIR /build-skia-library
 RUN apt-get update \ 
   && apt-get upgrade -y \
   && apt-get install -y \
