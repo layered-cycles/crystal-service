@@ -12,7 +12,7 @@ let package = Package(
   dependencies: [
     .package(
       url: "../FrameInterface",
-      from: "0.0.0")
+      from: "0.1.0")
   ],
   targets: [
     .target(

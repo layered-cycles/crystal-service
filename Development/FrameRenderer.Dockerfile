@@ -12,6 +12,6 @@ RUN cd FrameInterface \
   && git init \
   && git add -A \
   && git commit -m "Initial commit" \
-  && git tag -a 0.0.0 -m "0.0.0"
+  && git tag -a 0.1.0 -m "0.1.0"
 RUN cd FrameSchema \
   && swift package edit FrameInterface --path ../FrameInterface

@@ -40,7 +40,6 @@ function* initBuildServerContainer() {
 
 function buildBuildServerImage() {
   return new Promise(resolve => {
-    console.log('building crystal-development image...')
     const buildProcess = Child.spawn(
       'docker',
       [
@@ -48,7 +47,7 @@ function buildBuildServerImage() {
         '-t',
         'crystal-development',
         '-f',
-        '../Development.Dockerfile',
+        '../Development/Development.Dockerfile',
         '../'
       ],
       { stdio: 'inherit' }
@@ -100,19 +99,13 @@ function* initServiceContainers() {
 function composeServiceContainers() {
   return new Promise(resolve => {
     console.log('composing containers...')
-    const composeUpProcess = Child.spawn(
-      'docker-compose',
-      ['--file', '../docker-compose.yaml', 'up', '--detach'],
-      { stdio: 'inherit' }
-    )
+    const composeUpProcess = Child.spawn('docker-compose', ['up', '--detach'], {
+      stdio: 'inherit'
+    })
     composeUpProcess.on('close', () => {
       console.log('')
       process.on('exit', () => {
-        Child.spawn(
-          'docker-compose',
-          ['--file', '../docker-compose.yaml', 'down'],
-          { stdio: 'inherit' }
-        )
+        Child.spawn('docker-compose', ['down'], { stdio: 'inherit' })
       })
       resolve()
     })
@@ -124,7 +117,7 @@ function fetchCoreContainerId() {
   console.log('')
   return new Promise(resolve => {
     Child.exec(
-      'docker-compose --file ../docker-compose.yaml ps --quiet service-core',
+      'docker-compose --file ./docker-compose.yaml ps --quiet service-core',
       (fetchError, containerId) => {
         if (fetchError) throw fetchError
         const coreContainerId = containerId.substring(0, 12)
@@ -139,7 +132,7 @@ function fetchFrameRendererContainerId() {
   console.log('')
   return new Promise(resolve => {
     Child.exec(
-      'docker-compose --file ../docker-compose.yaml ps --quiet frame-renderer',
+      'docker-compose --file ./docker-compose.yaml ps --quiet frame-renderer',
       (fetchError, containerId) => {
         if (fetchError) throw fetchError
         const frameRendererContainerId = containerId.substring(0, 12)

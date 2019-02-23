@@ -6,6 +6,7 @@
   "workspaces": {
     "packages": [
       "Development",
+      "Production",
       "ServiceCore"
     ]
   },
@@ -20,6 +21,7 @@
     "copy-skia-lib": "docker cp build-skia:/skialib/skia/out/Static/libskia.a ./SkiaBuild/out/Static",
     "copy-skia-headers": "docker cp build-skia:/skialib/skia/include ./SkiaBuild",
     "copy-skia-third_party": "docker cp build-skia:/skialib/skia/third_party/skcms ./SkiaBuild/third_party",
-    "start-development": "cd Development && yarn start"
+    "start-development": "cd Development && yarn start",
+    "build-production": "cd Production && yarn start"
   }
 }

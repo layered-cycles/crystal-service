@@ -9,10 +9,10 @@ let package = Package(
       from: "3.0.0"),
     .package(
       url: "../Skia", 
-      from: "0.0.0"),
+      from: "0.1.0"),
     .package(
       url: "../FrameInterface",
-      from: "0.0.0")
+      from: "0.1.0")
   ],
   targets: [
     .target(

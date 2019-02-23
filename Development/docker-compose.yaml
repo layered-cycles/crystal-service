@@ -10,9 +10,8 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
   service-core:
     build:
-      context: ./
-      dockerfile: ServiceCore.Dockerfile
-    restart: always
+      context: ../
+      dockerfile: ./Development/ServiceCore.Dockerfile
     image: crystal-service-core
     stdin_open: true
     labels:
@@ -22,9 +21,8 @@ services:
       - 'traefik.port=80'
   frame-renderer:
     build:
-      context: ./
-      dockerfile: FrameRenderer.Dockerfile
-    restart: always
+      context: ../
+      dockerfile: ./Development/FrameRenderer.Dockerfile
     image: crystal-frame-renderer
     stdin_open: true
     labels:
