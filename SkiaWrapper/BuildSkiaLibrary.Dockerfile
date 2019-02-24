@@ -10,6 +10,8 @@ RUN wget https://github.com/ninja-build/ninja/releases/download/v1.7.2/ninja-lin
   && unzip ninja-linux.zip
 RUN git clone https://skia.googlesource.com/skia.git \
   && cd skia \
+  && git fetch \
+  && git checkout chrome/m73 \  
   && python tools/git-sync-deps
 RUN cd skia \
   && bin/gn gen out/Static --args=' \
