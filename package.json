@@ -11,6 +11,7 @@
   },
   "scripts": {
     "build-production": "cd BuildProduction && yarn start",
-    "start-development": "cd StartDevelopment && yarn start"
+    "start-development": "cd StartDevelopment && yarn start",
+    "start-service": "docker-compose up"
   }
 }
