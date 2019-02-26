@@ -1,0 +1,16 @@
+{
+  "name": "crystal-development",
+  "version": "0.1.0",
+  "description": "development entry-point",
+  "main": "./Sources/index.js",
+  "private": true,
+  "dependencies": {
+    "create-saga-core": "^0.1.2",
+    "node-watch": "^0.5.9",
+    "redux": "^4.0.1",
+    "redux-saga": "^0.16.2"
+  },
+  "scripts": {
+    "start": "node ./Sources/index.js"
+  }
+}

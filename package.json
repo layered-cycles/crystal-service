@@ -1,0 +1,17 @@
+{
+  "name": "crystal-service",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": {
+    "packages": [
+      "BuildProduction",
+      "ServiceCore",
+      "StartDevelopment"
+    ]
+  },
+  "scripts": {
+    "build-production": "cd BuildProduction && yarn start",
+    "start-development": "cd StartDevelopment && yarn start",
+    "start-service": "docker-compose up"
+  }
+}

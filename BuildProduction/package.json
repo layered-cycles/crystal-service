@@ -1,0 +1,9 @@
+{
+  "name": "crystal-production",
+  "version": "0.1.0",
+  "main": "Sources/index.js",
+  "private": true,
+  "scripts": {
+    "start": "node ./Sources/index.js"
+  }
+}

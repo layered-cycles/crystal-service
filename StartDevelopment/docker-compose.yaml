@@ -1,0 +1,29 @@
+version: '3'
+services:
+  edge-server:
+    image: traefik
+    command: --docker --api
+    ports:
+      - '3000:80'
+      - '8080:8080'
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+  service-core:
+    build:
+      context: ../
+      dockerfile: ./StartDevelopment/ServiceCore.Dockerfile
+    image: crystal-service-core
+    stdin_open: true
+    labels:
+      - 'traefik.backend=service-core'
+      - 'traefik.frontend.rule=Host:localhost'
+      - 'traefik.frontend.rule=PathPrefix:/api'
+      - 'traefik.port=80'
+  frame-renderer:
+    build:
+      context: ../
+      dockerfile: ./StartDevelopment/FrameRenderer.Dockerfile
+    image: crystal-frame-renderer
+    stdin_open: true
+    labels:
+      - 'traefik.backend=frame-renderer'

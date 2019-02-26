@@ -1,0 +1,16 @@
+{
+  "name": "crystal-skia",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "build-skia-library": "yarn build-skia-image && yarn transfer-skia-build",
+    "build-skia-image": "docker build -t build-skia-library -f BuildSkiaLibrary.Dockerfile .",
+    "transfer-skia-build": "yarn run-skia-image && yarn make-skia-build-directory && yarn copy-skia-build",
+    "run-skia-image": "docker run --name build-container build-skia-library",
+    "make-skia-build-directory": "mkdir -p _Library/out/Static _Library/third_party",
+    "copy-skia-build": "yarn copy-skia-lib && yarn copy-skia-headers && yarn copy-skia-third_party",
+    "copy-skia-lib": "docker cp build-container:/build-skia-library/skia/out/Static/libskia.a ./_Library/out/Static",
+    "copy-skia-headers": "docker cp build-container:/build-skia-library/skia/include ./_Library",
+    "copy-skia-third_party": "docker cp build-container:/build-skia-library/skia/third_party/skcms ./_Library/third_party"
+  }
+}
