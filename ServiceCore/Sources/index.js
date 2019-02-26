@@ -30,6 +30,7 @@ function* apiProcessor() {
         )
         continue
       default:
+        const apiResponder = apiRequest.responder
         apiResponder.statusCode = 400
         apiResponder.send()
         continue
@@ -44,6 +45,14 @@ function createApiChannel() {
     apiServer.use(jsonMiddleware)
     const apiChannel = eventChannel(emit => {
       apiServer.post('/api', (httpRequest, httpResponder) => {
+        const httpRequestBodyIsInvalid =
+          !httpRequest.body.hasOwnProperty('type') ||
+          !httpRequest.body.hasOwnProperty('payload')
+        if (httpRequestBodyIsInvalid) {
+          httpResponder.statusCode = 400
+          httpResponder.send()
+          return
+        }
         const apiRequest = {
           ...httpRequest.body,
           responder: httpResponder
